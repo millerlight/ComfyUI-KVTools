@@ -2,7 +2,7 @@
   "name": "ComfyUI-KVTools",
   "author": "millerlight",
   "version": "1.0.0",
-  "description": "Key/Value utilities for ComfyUI: inline/file/registry loaders and a KV Get node with key dropdown (no-run).",
+  "description": "Nodes for Key/Value (KV) storage, loading JSON inline, from a single file, multiple JSON files or from a folder with JSON files via dynamic UI dropdowns.",
   "link": "https://github.com/millerlight/ComfyUI-KVTools",
   "repo_url": "https://github.com/millerlight/ComfyUI-KVTools",
   "license": "MIT",
