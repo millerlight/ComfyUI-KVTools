@@ -1,9 +1,11 @@
-# ComfyUI-KVTools: serve web assets and prebuild registry
+# __init__.py in custom_nodes/ComfyUI-KVTools
 
 import os, json
 
-NODE_CLASS_MAPPINGS = {}
-NODE_DISPLAY_NAME_MAPPINGS = {}
+from . import kv_nodes  # relativer Import!
+
+NODE_CLASS_MAPPINGS = kv_nodes.NODE_CLASS_MAPPINGS
+NODE_DISPLAY_NAME_MAPPINGS = kv_nodes.NODE_DISPLAY_NAME_MAPPINGS
 
 WEB_DIRECTORY = "./web"
 
