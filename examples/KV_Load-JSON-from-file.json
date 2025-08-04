@@ -1,0 +1,160 @@
+{
+  "id": "cfb3a811-7d14-4f74-8777-b5bef7faf38a",
+  "revision": 0,
+  "last_node_id": 69,
+  "last_link_id": 93,
+  "nodes": [
+    {
+      "id": 68,
+      "type": "easy showAnything",
+      "pos": [
+        1799.9375,
+        2997.621826171875
+      ],
+      "size": [
+        185.40843200683594,
+        110.81952667236328
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "anything",
+          "shape": 7,
+          "type": "*",
+          "link": 93
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "*",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-easy-use",
+        "ver": "1.3.1",
+        "Node name for S&R": "easy showAnything"
+      }
+    },
+    {
+      "id": 69,
+      "type": "KVGet",
+      "pos": [
+        1252.26904296875,
+        3020.210205078125
+      ],
+      "size": [
+        400,
+        200
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "store",
+          "type": "KV",
+          "link": 92
+        }
+      ],
+      "outputs": [
+        {
+          "name": "value",
+          "type": "STRING",
+          "links": [
+            93
+          ]
+        },
+        {
+          "name": "keys",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "KVGet"
+      },
+      "widgets_values": [
+        "",
+        "",
+        "string",
+        ""
+      ]
+    },
+    {
+      "id": 38,
+      "type": "KVLoadFromFile",
+      "pos": [
+        849.7337646484375,
+        2995.6416015625
+      ],
+      "size": [
+        270,
+        102
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "store",
+          "type": "KV",
+          "links": [
+            92
+          ]
+        },
+        {
+          "name": "path",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "KVLoadFromFile"
+      },
+      "widgets_values": [
+        "teststore",
+        "test1.json"
+      ]
+    }
+  ],
+  "links": [
+    [
+      92,
+      38,
+      0,
+      69,
+      0,
+      "KV"
+    ],
+    [
+      93,
+      69,
+      0,
+      68,
+      0,
+      "*"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.8769226950000005,
+      "offset": [
+        -199.72993463500978,
+        -2543.131264619633
+      ]
+    },
+    "frontendVersion": "1.23.4",
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}

@@ -1,0 +1,23 @@
+{
+  "name": "ComfyUI-KVTools",
+  "author": "YOUR_NAME",
+  "version": "1.0.0",
+  "description": "Key/Value utilities for ComfyUI: inline/file/registry loaders and a KV Get node with key dropdown (no-run).",
+  "link": "https://github.com/YOUR_GITHUB/ComfyUI-KVTools",
+  "repo_url": "https://github.com/YOUR_GITHUB/ComfyUI-KVTools",
+  "license": "MIT",
+  "tags": [
+    "utility",
+    "io",
+    "json",
+    "kv",
+    "dropdown",
+    "frontend"
+  ],
+  "pip": [],
+  "requires": [],
+  "extensions": [
+    "web/extensions/extension.js",
+    "web/extensions/kvtools.js"
+  ]
+}

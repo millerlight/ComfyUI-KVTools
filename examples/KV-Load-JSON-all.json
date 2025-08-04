@@ -1,0 +1,787 @@
+{
+  "id": "92486e2d-9f42-4da7-99dc-3e4d64095af0",
+  "revision": 0,
+  "last_node_id": 89,
+  "last_link_id": 116,
+  "nodes": [
+    {
+      "id": 33,
+      "type": "KVLoadInline",
+      "pos": [
+        683.4480590820312,
+        2739.731689453125
+      ],
+      "size": [
+        400,
+        200
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "store",
+          "type": "KV",
+          "links": [
+            111,
+            112
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "KVLoadInline"
+      },
+      "widgets_values": [
+        "{\n  \"speaker\":\"Tom\",\n  \"lang\":\"de\"\n}"
+      ]
+    },
+    {
+      "id": 38,
+      "type": "KVLoadFromFile",
+      "pos": [
+        705.9954833984375,
+        3758.9765625
+      ],
+      "size": [
+        270,
+        102
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "store",
+          "type": "KV",
+          "links": [
+            97,
+            104
+          ]
+        },
+        {
+          "name": "path",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "KVLoadFromFile"
+      },
+      "widgets_values": [
+        "teststore",
+        "test1.json"
+      ]
+    },
+    {
+      "id": 48,
+      "type": "KVLoadFromRegistry",
+      "pos": [
+        701.0610961914062,
+        3286.093017578125
+      ],
+      "size": [
+        270,
+        78
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "store",
+          "type": "KV",
+          "links": [
+            96,
+            101
+          ]
+        },
+        {
+          "name": "path",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "KVLoadFromRegistry"
+      },
+      "widgets_values": [
+        "test1-backup.json"
+      ]
+    },
+    {
+      "id": 74,
+      "type": "Text Multiline",
+      "pos": [
+        324.3616027832031,
+        2747.666259765625
+      ],
+      "size": [
+        319.7192687988281,
+        187.4561309814453
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "title": "INLINE JSON",
+      "properties": {
+        "cnr_id": "was-node-suite-comfyui",
+        "ver": "1.0.2",
+        "Node name for S&R": "Text Multiline"
+      },
+      "widgets_values": [
+        "inline json from the inline multiline text field"
+      ],
+      "color": "#432",
+      "bgcolor": "#653"
+    },
+    {
+      "id": 76,
+      "type": "Text Multiline",
+      "pos": [
+        344.4318542480469,
+        3761.316162109375
+      ],
+      "size": [
+        319.7192687988281,
+        187.4561309814453
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "was-node-suite-comfyui",
+        "ver": "1.0.2",
+        "Node name for S&R": "Text Multiline"
+      },
+      "widgets_values": [
+        "load single json file from a custom folder"
+      ],
+      "color": "#432",
+      "bgcolor": "#653"
+    },
+    {
+      "id": 75,
+      "type": "Text Multiline",
+      "pos": [
+        339.41424560546875,
+        3298.447998046875
+      ],
+      "size": [
+        319.7192687988281,
+        187.4561309814453
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "title": "JSON from a standard registry",
+      "properties": {
+        "cnr_id": "was-node-suite-comfyui",
+        "ver": "1.0.2",
+        "Node name for S&R": "Text Multiline"
+      },
+      "widgets_values": [
+        "load multiple json files from a folder called custom_stores in your ComfyUI base path.\nput your json files in this folder and restart comfyUI.\n\nthen choose your single file from the filname list."
+      ],
+      "color": "#432",
+      "bgcolor": "#653"
+    },
+    {
+      "id": 77,
+      "type": "easy showAnything",
+      "pos": [
+        986.1874389648438,
+        3464.20751953125
+      ],
+      "size": [
+        210,
+        110.81952667236328
+      ],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "anything",
+          "shape": 7,
+          "type": "*",
+          "link": 96
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "*",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-easy-use",
+        "ver": "1.3.1",
+        "Node name for S&R": "easy showAnything"
+      }
+    },
+    {
+      "id": 78,
+      "type": "easy showAnything",
+      "pos": [
+        992.4047241210938,
+        3969.6611328125
+      ],
+      "size": [
+        210,
+        110.81952667236328
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "anything",
+          "shape": 7,
+          "type": "*",
+          "link": 97
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "*",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-easy-use",
+        "ver": "1.3.1",
+        "Node name for S&R": "easy showAnything"
+      }
+    },
+    {
+      "id": 80,
+      "type": "KVGet",
+      "pos": [
+        1271.5174560546875,
+        3286.166259765625
+      ],
+      "size": [
+        400,
+        204
+      ],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "store",
+          "type": "KV",
+          "link": 101
+        }
+      ],
+      "outputs": [
+        {
+          "name": "value",
+          "type": "STRING",
+          "links": [
+            107
+          ]
+        },
+        {
+          "name": "keys",
+          "type": "STRING",
+          "links": [
+            108
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "KVGet"
+      },
+      "widgets_values": [
+        "",
+        "",
+        "string",
+        ""
+      ]
+    },
+    {
+      "id": 81,
+      "type": "KVGet",
+      "pos": [
+        1272.2216796875,
+        3759.560302734375
+      ],
+      "size": [
+        400,
+        204
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "store",
+          "type": "KV",
+          "link": 104
+        }
+      ],
+      "outputs": [
+        {
+          "name": "value",
+          "type": "STRING",
+          "links": [
+            109
+          ]
+        },
+        {
+          "name": "keys",
+          "type": "STRING",
+          "links": [
+            110
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "KVGet"
+      },
+      "widgets_values": [
+        "",
+        "",
+        "string",
+        ""
+      ]
+    },
+    {
+      "id": 82,
+      "type": "easy showAnything",
+      "pos": [
+        1746.3309326171875,
+        3263.577880859375
+      ],
+      "size": [
+        210,
+        110.81952667236328
+      ],
+      "flags": {},
+      "order": 16,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "anything",
+          "shape": 7,
+          "type": "*",
+          "link": 107
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "*",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-easy-use",
+        "ver": "1.3.1",
+        "Node name for S&R": "easy showAnything"
+      }
+    },
+    {
+      "id": 83,
+      "type": "easy showAnything",
+      "pos": [
+        1740.962890625,
+        3460.48876953125
+      ],
+      "size": [
+        210,
+        110.81952667236328
+      ],
+      "flags": {},
+      "order": 17,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "anything",
+          "shape": 7,
+          "type": "*",
+          "link": 108
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "*",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-easy-use",
+        "ver": "1.3.1",
+        "Node name for S&R": "easy showAnything"
+      }
+    },
+    {
+      "id": 84,
+      "type": "easy showAnything",
+      "pos": [
+        1747.03515625,
+        3736.971923828125
+      ],
+      "size": [
+        210,
+        110.81952667236328
+      ],
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "anything",
+          "shape": 7,
+          "type": "*",
+          "link": 109
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "*",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-easy-use",
+        "ver": "1.3.1",
+        "Node name for S&R": "easy showAnything"
+      }
+    },
+    {
+      "id": 85,
+      "type": "easy showAnything",
+      "pos": [
+        1741.6671142578125,
+        3933.883056640625
+      ],
+      "size": [
+        210,
+        110.81952667236328
+      ],
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "anything",
+          "shape": 7,
+          "type": "*",
+          "link": 110
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "*",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-easy-use",
+        "ver": "1.3.1",
+        "Node name for S&R": "easy showAnything"
+      }
+    },
+    {
+      "id": 86,
+      "type": "easy showAnything",
+      "pos": [
+        1076.18115234375,
+        3007.4853515625
+      ],
+      "size": [
+        210,
+        110.81952667236328
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "anything",
+          "shape": 7,
+          "type": "*",
+          "link": 111
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "*",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-easy-use",
+        "ver": "1.3.1",
+        "Node name for S&R": "easy showAnything"
+      }
+    },
+    {
+      "id": 87,
+      "type": "KVGet",
+      "pos": [
+        1267.475830078125,
+        2738.90283203125
+      ],
+      "size": [
+        400,
+        204
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "store",
+          "type": "KV",
+          "link": 112
+        }
+      ],
+      "outputs": [
+        {
+          "name": "value",
+          "type": "STRING",
+          "links": [
+            115
+          ]
+        },
+        {
+          "name": "keys",
+          "type": "STRING",
+          "links": [
+            116
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "KVGet"
+      },
+      "widgets_values": [
+        "",
+        "",
+        "string",
+        ""
+      ]
+    },
+    {
+      "id": 88,
+      "type": "easy showAnything",
+      "pos": [
+        1743.96240234375,
+        2739.54248046875
+      ],
+      "size": [
+        210,
+        110.81952667236328
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "anything",
+          "shape": 7,
+          "type": "*",
+          "link": 115
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "*",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-easy-use",
+        "ver": "1.3.1",
+        "Node name for S&R": "easy showAnything"
+      }
+    },
+    {
+      "id": 89,
+      "type": "easy showAnything",
+      "pos": [
+        1745.677001953125,
+        2941.484375
+      ],
+      "size": [
+        210,
+        110.81952667236328
+      ],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "anything",
+          "shape": 7,
+          "type": "*",
+          "link": 116
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "*",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-easy-use",
+        "ver": "1.3.1",
+        "Node name for S&R": "easy showAnything"
+      }
+    }
+  ],
+  "links": [
+    [
+      96,
+      48,
+      0,
+      77,
+      0,
+      "*"
+    ],
+    [
+      97,
+      38,
+      0,
+      78,
+      0,
+      "*"
+    ],
+    [
+      101,
+      48,
+      0,
+      80,
+      0,
+      "KV"
+    ],
+    [
+      104,
+      38,
+      0,
+      81,
+      0,
+      "KV"
+    ],
+    [
+      107,
+      80,
+      0,
+      82,
+      0,
+      "*"
+    ],
+    [
+      108,
+      80,
+      1,
+      83,
+      0,
+      "*"
+    ],
+    [
+      109,
+      81,
+      0,
+      84,
+      0,
+      "*"
+    ],
+    [
+      110,
+      81,
+      1,
+      85,
+      0,
+      "*"
+    ],
+    [
+      111,
+      33,
+      0,
+      86,
+      0,
+      "*"
+    ],
+    [
+      112,
+      33,
+      0,
+      87,
+      0,
+      "KV"
+    ],
+    [
+      115,
+      87,
+      0,
+      88,
+      0,
+      "*"
+    ],
+    [
+      116,
+      87,
+      1,
+      89,
+      0,
+      "*"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.9646149645000008,
+      "offset": [
+        -127.59846203037787,
+        -2617.493351983006
+      ]
+    },
+    "frontendVersion": "1.23.4",
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}
