@@ -1,10 +1,10 @@
 {
   "name": "ComfyUI-KVTools",
-  "author": "YOUR_NAME",
+  "author": "millerlight",
   "version": "1.0.0",
   "description": "Key/Value utilities for ComfyUI: inline/file/registry loaders and a KV Get node with key dropdown (no-run).",
-  "link": "https://github.com/YOUR_GITHUB/ComfyUI-KVTools",
-  "repo_url": "https://github.com/YOUR_GITHUB/ComfyUI-KVTools",
+  "link": "https://github.com/millerlight/ComfyUI-KVTools",
+  "repo_url": "https://github.com/millerlight/ComfyUI-KVTools",
   "license": "MIT",
   "tags": [
     "utility",
