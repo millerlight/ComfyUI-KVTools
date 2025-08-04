@@ -29,6 +29,13 @@ Restart ComfyUI afterwards.
   ```
   <ComfyUI>/custom_stores/*.json
   ```
+  Be careful, your json files must be in the correct format (just key/value pairs) !!!
+    ```
+{
+  "speaker": "Tom",
+  "speak": "hello"
+}
+  ```
   On startup, a registry file is written to:  
   `custom_nodes/ComfyUI-KVTools/web/kv_registry.json` (served at `/extensions/ComfyUI-KVTools/kv_registry.json`).
 
