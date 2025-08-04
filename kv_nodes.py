@@ -18,9 +18,9 @@ def _parse_data(data: str, fmt: str):
             obj = json.loads(data) if data else {}
             if isinstance(obj, dict):
                 return obj
-            raise ValueError("JSON ist kein Objekt (dict).")
+            raise ValueError("JSON is not an object (dict).")
         except Exception as e:
-            raise ValueError(f"JSON-Fehler: {e}")
+            raise ValueError(f"JSON-Error: {e}")
     elif fmt == "kv":
         out = {}
         for line in data.splitlines():
@@ -29,12 +29,12 @@ def _parse_data(data: str, fmt: str):
                 continue
             m = re.match(r"^\s*([^=:#]+)\s*[:=]\s*(.*)\s*$", line)
             if not m:
-                raise ValueError(f"Ungültige KV-Zeile: {line}")
+                raise ValueError(f"not a valid KV-line: {line}")
             k, v = m.group(1).strip(), m.group(2).strip()
             out[k] = v
         return out
     else:
-        raise ValueError(f"Unbekanntes Format: {fmt}")
+        raise ValueError(f"Unknown Format: {fmt}")
 
 def _dump_data(obj: dict, fmt: str, pretty: bool = True) -> str:
     if fmt == "json":
@@ -47,7 +47,7 @@ def _dump_data(obj: dict, fmt: str, pretty: bool = True) -> str:
             lines.append(f"{k}={v}")
         return "\n".join(lines)
     else:
-        raise ValueError(f"Unbekanntes Format zum Schreiben: {fmt}")
+        raise ValueError(f"Unknown Format to write: {fmt}")
 
 def _cast(value, as_type: str):
     if as_type == "string":
@@ -86,7 +86,7 @@ class KVGet:
         return {
             "required": {
                 "store": ("KV",),
-                "key": ("STRING", {"default": "", "placeholder": "wird via Dropdown gesetzt"}),
+                "key": ("STRING", {"default": "", "placeholder": "set via Dropdown"}),
                 "default": ("STRING", {"default": ""}),
                 "as_type": (["string", "int", "float", "bool"], {"default": "string"}),
             },
@@ -101,7 +101,7 @@ class KVGet:
 
     def get(self, store, key, default, as_type, keys_hint=""):
         if not isinstance(store, dict):
-            raise ValueError("KVGet: 'store' ist kein Dict (KV).")
+            raise ValueError("KVGet: 'store' is no Dict (KV).")
         if as_type not in ("string", "int", "float", "bool"):
             as_type = "string"
 
@@ -132,12 +132,12 @@ class KVLoadFromFile:
         base_path = (base_path or "").strip()
         file_name = (file_name or "").strip()
         if not base_path or not file_name:
-            raise ValueError("KVLoadFromFile: base_path oder file_name fehlt.")
+            raise ValueError("KVLoadFromFile: base_path or file_name missing.")
         path = os.path.join(base_path, file_name)
         if not os.path.isabs(path):
             path = os.path.join(os.getcwd(), path)
         if not os.path.isfile(path):
-            raise FileNotFoundError(f"KVLoadFromFile: Datei nicht gefunden: {path}")
+            raise FileNotFoundError(f"KVLoadFromFile: File not found: {path}")
         with open(path, "r", encoding="utf-8") as f:
             text = f.read()
         store = _parse_data(text, "auto")
@@ -168,7 +168,7 @@ class KVLoadFromRegistry:
             return ({}, "")
         path = os.path.join(self._BASE, file_name)
         if not os.path.isfile(path):
-            raise FileNotFoundError(f"KVLoadFromRegistry: Datei nicht gefunden: {path}")
+            raise FileNotFoundError(f"KVLoadFromRegistry: File not found: {path}")
         with open(path, "r", encoding="utf-8") as f:
             text = f.read()
         store = _parse_data(text, "auto")
@@ -184,7 +184,7 @@ class KVInspect:
     CATEGORY = "Utils/KV"
     def inspect(self, store):
         if not isinstance(store, dict):
-            return ("<store ist kein dict>",)
+            return ("<store is not a dict>",)
         keys = sorted(map(str, store.keys()))
         out = f"{len(keys)} keys:\\n" + "\\n".join(keys)
         print("[KVTools] Inspect:", out.replace("\\n", " | "))
