@@ -29,7 +29,7 @@ Restart ComfyUI afterwards.
   ```
   <ComfyUI>/custom_stores/*.json
   ```
-  Be careful, your json files must be in the correct format (just key/value pairs) !!!
+  Be careful, your json files must be in the correct format (just key/value pairs):
   ```
   {
      "speaker": "Tom",
