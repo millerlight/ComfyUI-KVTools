@@ -12,7 +12,7 @@ WEB_DIRECTORY = "./web"
 def _root():
     return os.getcwd()
 
-BASE_DIR = os.path.join(_root(), "custom_stores")
+BASE_DIR = os.path.join(_root(), "custom_kv_stores")
 REG_PATH = os.path.join(os.path.dirname(__file__), "web", "kv_registry.json")
 
 def _scan():
