@@ -50,6 +50,8 @@ Restart ComfyUI afterwards.
 - If you are using the KV Load from Registry node for the first time and there is no file_name choosable
   from the dropdown menu ensure that you have the directory for the custom_kv_stores and valid json files inside.
   Then restart ComfyUI again and clear the browser cache again.
+- If you are able to choose the file_name in the KV Load from Registry, but you do not see keys in KV Get Value
+  please click on the button KVTools: refresh keys
 
 ## custom_kv_stores
 - artists-and-styles.json (1500 artists and their styles as prompt)
