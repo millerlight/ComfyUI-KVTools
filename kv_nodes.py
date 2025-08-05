@@ -82,38 +82,72 @@ class KVLoadInline:
         return (store,)
 
 class KVGet:
+    """Read one value from a key/value store"""
+
+    CATEGORY = "KVTools"
+    FUNCTION = "kv_get"
+
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "store": ("KV",),
-                "key": ("STRING", {"default": "", "placeholder": "set via Dropdown"}),
-                "default": ("STRING", {"default": ""}),
-                "as_type": (["string", "int", "float", "bool"], {"default": "string"}),
+                "store": ("KV_STORE",),
+                "key": ("STRING", {
+                    "default": "",
+                    "multiline": False,
+                    "forceInput": False,
+                }),
+                "default": ("STRING", {
+                    "default": "",
+                    "multiline": True,
+                }),
+                "as_type": (["string", "int", "float", "bool"], {
+                    "default": "string",
+                }),
             },
             "optional": {
-                "keys_hint": ("STRING", {"multiline": True, "default": ""}),
+                "keys_hint": ("STRING", {
+                    "default": "(dropdown enabled)",
+                    "multiline": False,
+                    "visible": False,
+                }),
             }
         }
+
     RETURN_TYPES = ("STRING", "STRING")
-    RETURN_NAMES = ("value", "keys")
-    FUNCTION = "get"
-    CATEGORY = "Utils/KV"
+    RETURN_NAMES = ("value", "key")
+    OUTPUT_NODE = True
 
-    def get(self, store, key, default, as_type, keys_hint=""):
-        if not isinstance(store, dict):
-            raise ValueError("KVGet: 'store' is no Dict (KV).")
-        if as_type not in ("string", "int", "float", "bool"):
-            as_type = "string"
+    def __init__(self):
+        # Ensure null default gets replaced with empty string
+        self.default = ""
 
-        keys_list = sorted([str(k) for k in store.keys()])
-        keys_str = "\n".join(keys_list)
-        value = store.get((key or "").strip(), default)
-        try:
-            value = _cast(value, as_type)
-        except Exception:
-            value = _cast(default, as_type)
-        return (str(value), keys_str)
+    def kv_get(self, store, key, default, as_type, **kwargs):
+        # Fall-back protection
+        if default is None:
+            default = ""
+
+        value = store.get(key, default)
+
+        if as_type == "int":
+            try:
+                value = str(int(value))
+            except:
+                value = default
+        elif as_type == "float":
+            try:
+                value = str(float(value))
+            except:
+                value = default
+        elif as_type == "bool":
+            if str(value).strip().lower() in ("1", "true", "yes"):
+                value = "true"
+            else:
+                value = "false"
+        else:
+            value = str(value)
+
+        return (value, key)
 
 class KVLoadFromRegistry:
     _BASE = os.path.join(os.getcwd(), "custom_kv_stores")
@@ -144,7 +178,7 @@ class KVLoadFromRegistry:
             raise FileNotFoundError(f"KVLoadFromRegistry: File not found: {path}")
         with open(path, "r", encoding="utf-8") as f:
             text = f.read()
-        store = _parse_data(text, "utf-8")
+        store = _parse_data(text, "auto")
         return (store, path)
 
 NODE_CLASS_MAPPINGS = {
