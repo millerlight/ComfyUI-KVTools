@@ -47,6 +47,9 @@ Restart ComfyUI afterwards.
   - `http://127.0.0.1:8188/extensions/ComfyUI-KVTools/extension.js`
   - `http://127.0.0.1:8188/extensions/ComfyUI-KVTools/kv_registry.json`
 - If an old workflow loads with a blank `as_type`, the node defaults to **string** automatically.
+- If you are using the KV Load from Registry node for the first time and there is no file_name choosable
+  from the dropdown menu ensure that you have the directory for the custom_kv_stores and valid json files inside.
+  Then restart ComfyUI again and clear the browser cache again.
 
 ## custom_kv_stores
 - artists-and-styles.json (1500 artists and their styles as prompt)
