@@ -1,3 +1,4 @@
+
 # ComfyUI-KVTools: Key/Value Utilities (stabil, ohne Format-/Encoding-UI)
 
 import json
@@ -114,37 +115,8 @@ class KVGet:
             value = _cast(default, as_type)
         return (str(value), keys_str)
 
-class KVLoadFromFile:
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "base_path": ("STRING", {"placeholder": "z.B. /home/.../custom_stores"}),
-                "file_name": ("STRING", {"placeholder": "z.B. test1.json"}),
-            }
-        }
-    RETURN_TYPES = ("KV", "STRING")
-    RETURN_NAMES = ("store", "path")
-    FUNCTION = "load"
-    CATEGORY = "Utils/KV"
-
-    def load(self, base_path, file_name):
-        base_path = (base_path or "").strip()
-        file_name = (file_name or "").strip()
-        if not base_path or not file_name:
-            raise ValueError("KVLoadFromFile: base_path or file_name missing.")
-        path = os.path.join(base_path, file_name)
-        if not os.path.isabs(path):
-            path = os.path.join(os.getcwd(), path)
-        if not os.path.isfile(path):
-            raise FileNotFoundError(f"KVLoadFromFile: File not found: {path}")
-        with open(path, "r", encoding="utf-8") as f:
-            text = f.read()
-        store = _parse_data(text, "auto")
-        return (store, path)
-
 class KVLoadFromRegistry:
-    _BASE = os.path.join(os.getcwd(), "custom_stores")
+    _BASE = os.path.join(os.getcwd(), "custom_kv_stores")
     try:
         os.makedirs(_BASE, exist_ok=True)
         _FILES = sorted([n for n in os.listdir(_BASE) if n.lower().endswith(".json")]) or ["(none)"]
@@ -155,9 +127,10 @@ class KVLoadFromRegistry:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "file_name": (cls._FILES,),
+                "file_name": (cls._FILES, {"default": cls._FILES[0]}),
             }
         }
+
     RETURN_TYPES = ("KV", "STRING")
     RETURN_NAMES = ("store", "path")
     FUNCTION = "load"
@@ -171,36 +144,16 @@ class KVLoadFromRegistry:
             raise FileNotFoundError(f"KVLoadFromRegistry: File not found: {path}")
         with open(path, "r", encoding="utf-8") as f:
             text = f.read()
-        store = _parse_data(text, "auto")
+        store = _parse_data(text, "utf-8")
         return (store, path)
-
-class KVInspect:
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {"required": {"store": ("KV",)}}
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("keys",)
-    FUNCTION = "inspect"
-    CATEGORY = "Utils/KV"
-    def inspect(self, store):
-        if not isinstance(store, dict):
-            return ("<store is not a dict>",)
-        keys = sorted(map(str, store.keys()))
-        out = f"{len(keys)} keys:\\n" + "\\n".join(keys)
-        print("[KVTools] Inspect:", out.replace("\\n", " | "))
-        return (out,)
 
 NODE_CLASS_MAPPINGS = {
     "KVLoadInline": KVLoadInline,
-    "KVGet": KVGet,
-    "KVLoadFromFile": KVLoadFromFile,
     "KVLoadFromRegistry": KVLoadFromRegistry,
-    "KVInspect": KVInspect,
+    "KVGet": KVGet,
 }
 NODE_DISPLAY_NAME_MAPPINGS = {
     "KVLoadInline": "KV Load Inline",
-    "KVGet": "KV Get",
-    "KVLoadFromFile": "KV Load From File",
-    "KVLoadFromRegistry": "KV Load From Registry",
-    "KVInspect": "KV Inspect",
+    "KVLoadFromRegistry": "KV Load from Registry",
+    "KVGet": "KV Get Value",
 }

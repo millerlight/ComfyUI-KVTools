@@ -6,7 +6,7 @@ Custom JSON key-value pairs from multiple external files.
 ## Nodes
 - **KV Load Inline** – type/paste JSON or `key=value` lines; emits a KV store.
 - **KV Load From File** – load a JSON file from `base_path + file_name` (UTF-8, auto-detected JSON/KV).
-- **KV Load From Registry** – dropdown of JSON files found in `./custom_stores` (UTF-8).
+- **KV Load From Registry** – dropdown of JSON files found in `./custom_kv_stores` (UTF-8).
 - **KV Get** – pick a key (dropdown) and output its value (optionally cast to string/int/float/bool). Also outputs all keys as text.
 - **KV Inspect** – debug helper to print keys.
 
@@ -27,7 +27,7 @@ Restart ComfyUI afterwards.
 ## Usage
 - For **KV Load From Registry**, put your JSON files into:
   ```
-  <ComfyUI>/custom_stores/*.json
+  <ComfyUI>/custom_kv_stores/*.json
   ```
   Be careful, your json files must be in the correct format (just key/value pairs):
   ```
