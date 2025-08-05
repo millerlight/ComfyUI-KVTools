@@ -91,7 +91,7 @@ class KVGet:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "store": ("KV_STORE",),
+                "store": ("KV",),
                 "key": ("STRING", {
                     "default": "",
                     "multiline": False,
