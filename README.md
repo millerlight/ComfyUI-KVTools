@@ -23,7 +23,7 @@ git clone https://github.com/millerlight/ComfyUI-KVTools.git
 Restart ComfyUI afterwards.
 
 ## Usage
-- For **KV Load From Registry**, put your JSON files into:
+- For **KV Load From Registry**, create a directory and put your JSON files into it:
   ```
   <ComfyUI>/custom_kv_stores/*.json
   ```
@@ -47,6 +47,10 @@ Restart ComfyUI afterwards.
   - `http://127.0.0.1:8188/extensions/ComfyUI-KVTools/extension.js`
   - `http://127.0.0.1:8188/extensions/ComfyUI-KVTools/kv_registry.json`
 - If an old workflow loads with a blank `as_type`, the node defaults to **string** automatically.
+
+## custom_kv_stores
+- artists-and-styles.json (1500 artists and their styles as prompt)
+- nc-styles.json (expandable style prompts)
 
 ## License
 MIT
