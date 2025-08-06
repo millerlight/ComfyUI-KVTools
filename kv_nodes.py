@@ -207,3 +207,73 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "KVLoadFromRegistry": "KV Load from Registry",
     "KVGet": "KV Get Value",
 }
+
+
+# --- KVTools: Build an image path from key + base_dir + extension ---
+import re, os
+from PIL import Image
+import numpy as np
+import torch
+
+class KVBuildImagePath:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "key": ("STRING", {"forceInput": True, "multiline": False}),
+                "base_dir": ("STRING", {"default": "", "multiline": False}),
+                "ext": (["png", "jpg", "jpeg", "webp"], {"default": "png"}),
+            }
+        }
+
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("path",)
+    FUNCTION = "build"
+    CATEGORY = "Utils/KV"
+
+    def build(self, key, base_dir, ext):
+        # Key in einen sicheren Dateinamen überführen (keine Pfad-Tricks)
+        name = os.path.basename(str(key).strip())
+        safe = re.sub(r"[^A-Za-z0-9._ -]+", "_", name)
+        filename = f"{safe}.{ext}"
+        path = os.path.join(str(base_dir).strip(), filename)
+        return (path,)
+
+
+class KVLoadImageFromPath:
+    """
+    Minimaler Loader: lädt ein Bild von 'path' und gibt ein ComfyUI-IMAGE zurück.
+    Form: Tensor [1, H, W, 3], float32, 0..1
+    """
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "path": ("STRING", {"forceInput": True, "multiline": False}),
+            }
+        }
+
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("image",)
+    FUNCTION = "load"
+    CATEGORY = "Utils/KV"
+
+    def load(self, path):
+        p = str(path or "").strip()
+        if not p or not os.path.isfile(p):
+            raise FileNotFoundError(f"KVLoadImageFromPath: file not found: {p}")
+        img = Image.open(p).convert("RGB")
+        arr = np.array(img).astype(np.float32) / 255.0  # H, W, 3
+        t = torch.from_numpy(arr)[None, ...]            # 1, H, W, 3
+        return (t,)
+
+
+# ---- Node-Mapping ergänzen (am bestehenden Mapping unten dranhängen) ----
+NODE_CLASS_MAPPINGS.update({
+    "KVBuildImagePath": KVBuildImagePath,
+    "KVLoadImageFromPath": KVLoadImageFromPath,
+})
+NODE_DISPLAY_NAME_MAPPINGS.update({
+    "KVBuildImagePath": "KV Build Image Path",
+    "KVLoadImageFromPath": "KV Load Image From Path",
+})
