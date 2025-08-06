@@ -1,4 +1,4 @@
-# ComfyUI-KVTools: Key/Value Utilities (stabil, ohne Format-/Encoding-UI)
+# ComfyUI-KVTools: Key/Value Utilities (stabil)
 
 import json
 import re
@@ -96,16 +96,16 @@ class KVGet:
                     "multiline": False,
                     "forceInput": False,
                 }),
-                "default": ("STRING", {   # bleibt bestehen, wird aber per UI versteckt/minimiert
+                "default": ("STRING", {
                     "default": "",
                     "multiline": True,
                 }),
-                "as_type": (["string", "int", "float", "bool"], {
+                # WICHTIG: '' als Option zulassen für alte Workflows
+                "as_type": (["string", "int", "float", "bool", ""], {
                     "default": "string",
                 }),
             },
             "optional": {
-                # Nur für UI-Persistenz/Komfort – beeinflusst die Ausführung nicht:
                 "default_key": ("STRING", { "default": "", "visible": False, "multiline": False }),
                 "keys_hint": ("STRING", {
                     "default": "(dropdown enabled)",
@@ -115,40 +115,55 @@ class KVGet:
             }
         }
 
-    RETURN_TYPES = ("STRING", "STRING")
-    RETURN_NAMES = ("value", "key")
+    # value, key (bestehend) + json + kv (neu)
+    RETURN_TYPES = ("STRING", "STRING", "STRING", "STRING")
+    RETURN_NAMES  = ("value",  "key",   "json",   "kv")
     OUTPUT_NODE = True
 
     def __init__(self):
-        # Ensure null default gets replaced with empty string
         self.default = ""
 
     def kv_get(self, store, key, default, as_type, **kwargs):
-        # Fall-back protection
         if default is None:
             default = ""
 
-        value = store.get(key, default)
+        # Fallback: leere/ungültige Auswahl wie 'string' behandeln
+        if as_type not in ("string", "int", "float", "bool"):
+            as_type = "string"
 
+        # 1) Wert holen
+        raw_value = store.get(key, default)
+
+        # 2) in gewählten Typ casten (für 'value')
         if as_type == "int":
             try:
-                value = str(int(value))
+                value = str(int(raw_value))
             except:
                 value = default
         elif as_type == "float":
             try:
-                value = str(float(value))
+                value = str(float(raw_value))
             except:
                 value = default
         elif as_type == "bool":
-            if str(value).strip().lower() in ("1", "true", "yes"):
+            if str(raw_value).strip().lower() in ("1", "true", "yes"):
                 value = "true"
             else:
                 value = "false"
         else:
-            value = str(value)
+            value = "" if raw_value is None else str(raw_value)
 
-        return (value, key)
+        # 3) JSON-Snippet {"key":"value"}
+        json_snippet = json.dumps({str(key): ("" if raw_value is None else str(raw_value))}, ensure_ascii=False)
+
+        # 4) KV-Zeile key=value
+        if isinstance(raw_value, (dict, list)):
+            kv_value = json.dumps(raw_value, ensure_ascii=False)
+        else:
+            kv_value = "" if raw_value is None else str(raw_value)
+        kv_line = f"{key}={kv_value}"
+
+        return (value, key, json_snippet, kv_line)
 
 class KVLoadFromRegistry:
     _BASE = os.path.join(os.getcwd(), "custom_kv_stores")
