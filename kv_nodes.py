@@ -1,4 +1,3 @@
-
 # ComfyUI-KVTools: Key/Value Utilities (stabil, ohne Format-/Encoding-UI)
 
 import json
@@ -97,7 +96,7 @@ class KVGet:
                     "multiline": False,
                     "forceInput": False,
                 }),
-                "default": ("STRING", {
+                "default": ("STRING", {   # bleibt bestehen, wird aber per UI versteckt/minimiert
                     "default": "",
                     "multiline": True,
                 }),
@@ -106,6 +105,8 @@ class KVGet:
                 }),
             },
             "optional": {
+                # Nur für UI-Persistenz/Komfort – beeinflusst die Ausführung nicht:
+                "default_key": ("STRING", { "default": "", "visible": False, "multiline": False }),
                 "keys_hint": ("STRING", {
                     "default": "(dropdown enabled)",
                     "multiline": False,

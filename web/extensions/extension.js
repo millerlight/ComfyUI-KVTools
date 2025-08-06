@@ -1,248 +1,294 @@
-// KVTools: KVGet-Dropdown (autoload, ES module)
-// Files served at /extensions/ComfyUI-KVTools/*
-
+// web/extension.js
 import { app } from "/scripts/app.js";
 
-const EXT = "KVTools.KVGetDropdown.autoload";
-let REG = null;
+const WN = {
+  PREVIEW: "_preview_value",
+  RANDOM: "_kvtools_random_key",
+  REFRESH: "_kvtools_refresh_keys",
+  SETDEF: "_kvtools_set_default_key",
+  LOADDEF: "_kvtools_load_default_key",
+  KEY_SELECT: "key_select",     // sichtbares Dropdown (oben)
+  DEFAULT: "default",
+  DEFAULT_KEY: "default_key",
+  KEY: "key",                   // intern, unsichtbar
+  KEYS_HINT: "keys_hint",       // intern, unsichtbar
+};
+const REFRESH_LABEL = "KVTools: refresh keys";
+const AS_TYPE_ALLOWED = ["string", "int", "float", "bool"];
 
-async function loadRegistry() {
-  if (REG) return REG;
-  try {
-    const r = await fetch("/extensions/ComfyUI-KVTools/kv_registry.json", { cache: "no-store" });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    REG = await r.json();
-    console.log("[KVTools] registry OK");
-  } catch (e) {
-    console.warn("[KVTools] registry load failed:", e);
-    REG = { base_dir: "", files: {} };
-  }
-  return REG;
+// ---------- Helper ----------
+function getInputNode(node, slotIndex = 0) {
+  try { return node.getInputNode?.(slotIndex) ?? null; } catch { return null; }
 }
-
-function W(node, name) {
-  return (node.widgets || []).find(w => w.name === name);
+function getWidget(node, name) {
+  return node.widgets?.find?.(w => w.name === name);
 }
-function setVal(node, w, val) {
-  if (!w) return;
-  const v = String(val ?? "").trim();
-  w.value = v;
-  const i = (node.widgets || []).indexOf(w);
-  if (i >= 0 && Array.isArray(node.widgets_values)) node.widgets_values[i] = v;
+function ensureWidget(node, type, name, value, cb, options) {
+  let w = getWidget(node, name);
+  if (w) return w;
+  // addWidget(type, name, value, callback, options)
+  return node.addWidget(type, name, value, cb, options);
 }
-function parseKV(text) {
-  const out = [];
-  if (!text) return out;
-  for (const raw of String(text).split(/\r?\n/)) {
-    const line = raw.trim();
-    if (!line || line.startsWith("#")) continue;
-    const m = line.match(/^\s*([^=:#]+)\s*[:=]\s*(.*)\s*$/);
-    if (m) out.push(m[1].trim());
-  }
-  return Array.from(new Set(out));
-}
-function parseMaybeJSON(text) {
-  try {
-    const o = JSON.parse(text);
-    if (o && typeof o === "object" && !Array.isArray(o)) return Object.keys(o);
-  } catch {}
-  return null;
-}
-function keysFromInline(up) {
-  const dataW = W(up, "data");
-  if (!dataW) return [];
-  const data = dataW.value ?? "";
-  const fmtW = W(up, "format") || W(up, "file_format");
-  const fmt = String(fmtW?.value ?? "auto").toLowerCase();
-  if (fmt === "json" || fmt === "auto") {
-    const k = parseMaybeJSON(data);
-    if (k?.length) return k.sort();
-  }
-  return parseKV(data).sort();
-}
-function upstreamFileName(node) {
-  const inp = (node.inputs || []).find(i => i && i.name === "store");
-  if (!inp || inp.link == null || !node.graph) return null;
-  const link = node.graph.links[inp.link];
-  if (!link) return null;
-  const up = node.graph.getNodeById(link.origin_id);
-  if (!up) return null;
-
-  const fw = W(up, "file_name");
-  if (fw) {
-    const v = String(fw.value || "").trim();
-    if (v) return v;
-  }
-  const pw = W(up, "path");
-  if (pw) {
-    const p = String(pw.value || "").trim();
-    if (p) {
-      try {
-        return p.split(/[\\/]/).pop();
-      } catch {}
-    }
-  }
-  return null;
-}
-function keysFromRegistryByFile(fileName) {
-  if (!fileName) return [];
-  const files = REG?.files || {};
-  const entry = files[fileName];
-  return Array.isArray(entry?.keys) ? entry.keys.slice() : [];
-}
-
-function collectKeys(node) {
-  const f = upstreamFileName(node);
-  if (f) {
-    const kk = keysFromRegistryByFile(f);
-    if (kk.length) return kk;
-  }
-  const inp = (node.inputs || []).find(i => i && i.name === "store");
-  if (inp && inp.link != null && node.graph) {
-    const link = node.graph.links[inp.link];
-    if (link) {
-      const up = node.graph.getNodeById(link.origin_id);
-      if (up) {
-        const kk = keysFromInline(up);
-        if (kk.length) return kk;
-      }
-    }
-  }
-  return ["(no keys)"];
-}
-
 function hideWidget(w) {
   if (!w) return;
+  try { if (w.inputEl) w.inputEl.style.display = "none"; } catch {}
   w.hidden = true;
-  w.widget_options = { hidden: true };
-  w.computeSize = () => [0, 0];
+  w.draw = () => {};
+  w.computeSize = () => [0, -4];
 }
-
-function ensureAsTypeDefault(node) {
-  const w = (node.widgets || []).find(w => w.name === "as_type");
-  if (w && !["string", "int", "float", "bool"].includes(String(w.value))) {
-    const i = node.widgets.indexOf(w);
-    w.value = "string";
-    if (i >= 0 && Array.isArray(node.widgets_values)) node.widgets_values[i] = "string";
+function moveWidgetToTop(node, w) {
+  if (!node.widgets || !w) return;
+  const i = node.widgets.indexOf(w);
+  if (i > 0) {
+    node.widgets.splice(i, 1);
+    node.widgets.unshift(w);
   }
 }
-
-function buildCombo(node, keyW) {
-  if (node.__kvtools_combo) {
-    const idx = node.widgets.indexOf(node.__kvtools_combo);
-    if (idx >= 0) node.widgets.splice(idx, 1);
-    node.__kvtools_combo = null;
-  }
-
-  const keys = collectKeys(node);
-  const initial = keys.includes(String(keyW.value)) ? String(keyW.value) : keys[0];
-
-  const combo = node.addWidget(
-    "combo",
-    "key_select",
-    initial,
-    (val) => {
-      if (val && val !== "(no keys)") setVal(node, keyW, val);
-      node.setDirtyCanvas(true, true);
-    },
-    { values: keys.slice() }
-  );
-  combo.serialize = false;
+function setComboValues(combo, values) {
   combo.options = combo.options || {};
-  combo.options.values = keys.slice();
-
-  const wi = node.widgets.indexOf(combo);
-  if (wi > 0) {
-    node.widgets.splice(wi, 1);
-    node.widgets.unshift(combo);
+  combo.options.values = Array.isArray(values) ? values : [];
+  if (!combo.options.values.includes(combo.value)) {
+    combo.value = combo.options.values[0] ?? "";
   }
+}
+function parseInline(inlineNode) {
+  const w = getWidget(inlineNode, "data");
+  const txt = (w?.value ?? "").trim();
+  if (!txt) return {};
+  // JSON versuchen
+  try {
+    const obj = JSON.parse(txt);
+    if (obj && typeof obj === "object" && !Array.isArray(obj)) return obj;
+  } catch {}
+  // Fallback: einfache KV-Zeilen
+  const out = {};
+  for (const line of txt.split(/\r?\n/)) {
+    const s = line.trim();
+    if (!s || s.startsWith("#")) continue;
+    const m = s.match(/^\s*([^=:#]+)\s*[:=]\s*(.*)\s*$/);
+    if (m) out[String(m[1]).trim()] = String(m[2]).trim();
+  }
+  return out;
+}
+async function tryFetchJson(url) {
+  try { const r = await fetch(url, { cache: "no-store" }); if (!r.ok) return null; return await r.json(); }
+  catch { return null; }
+}
+async function loadRegistry() {
+  const candidates = [
+    "/extensions/ComfyUI-KVTools/kv_registry.json",
+    "/extensions/comfyui-kvtools/kv_registry.json",
+    "/extensions/ComfyUI-KVTools/web/kv_registry.json",
+    "/extensions/comfyui-kvtools/web/kv_registry.json",
+  ];
+  for (const p of candidates) {
+    const j = await tryFetchJson(p);
+    if (j && j.files) return j;
+  }
+  return null;
+}
+function getRegFile(regNode) {
+  return getWidget(regNode, "file_name")?.value || null;
+}
+async function peekServer(fileName, key) {
+  if (!fileName || !key) return "";
+  try {
+    const res = await fetch("/kvtools/peek", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ file_name: fileName, key }),
+    });
+    if (!res.ok) return "";
+    const j = await res.json();
+    return j.ok ? (j.value ?? "") : "";
+  } catch { return ""; }
+}
+function keysFromInline(node) { return Object.keys(parseInline(node)).sort(); }
+async function keysFromRegistry(node, registry) {
+  const fn = getRegFile(node);
+  const entry = registry?.files?.[fn];
+  return Array.isArray(entry?.keys) ? entry.keys : [];
+}
+async function getKeys(node, registry) {
+  const up = getInputNode(node, 0);
+  if (!up) return [];
+  if (up.comfyClass === "KVLoadInline") return keysFromInline(up);
+  if (up.comfyClass === "KVLoadFromRegistry") return await keysFromRegistry(up, registry);
+  return [];
+}
+async function updatePreview(node, registry) {
+  const prev = getWidget(node, WN.PREVIEW);
+  const keyW = getWidget(node, WN.KEY);
+  if (!prev || !keyW) return;
+  const key = (keyW.value ?? "").trim();
+  if (!key) { prev.value = ""; node.setDirtyCanvas(true, true); return; }
 
-  if (initial && initial !== "(no keys)") setVal(node, keyW, initial);
+  const up = getInputNode(node, 0);
+  if (!up) { prev.value = ""; node.setDirtyCanvas(true, true); return; }
 
-  hideWidget(keyW);
-  hideWidget(W(node, "keys_hint"));
-
-  node.widgets_changed = true;
-  if (node.onResize) try { node.onResize(node.size); } catch {}
+  if (up.comfyClass === "KVLoadInline") {
+    let v = parseInline(up)[key];
+    if (typeof v === "object") v = JSON.stringify(v);
+    prev.value = (v ?? "").toString();
+  } else if (up.comfyClass === "KVLoadFromRegistry") {
+    const v = await peekServer(getRegFile(up), key);
+    prev.value = (v ?? "").toString();
+  } else {
+    prev.value = "";
+  }
   node.setDirtyCanvas(true, true);
-  node.__kvtools_combo = combo;
+}
+async function syncKeyList(node, registry) {
+  const ks = getWidget(node, WN.KEY_SELECT);
+  const keyW = getWidget(node, WN.KEY);
+  if (!ks || !keyW) return;
+  const list = await getKeys(node, registry);
+  setComboValues(ks, list);
 
-  console.log("[KVTools] combo built on node", node.id, "keys:", keys);
+  if (keyW.value && list.includes(keyW.value)) {
+    ks.value = keyW.value;
+  } else if (!keyW.value && ks.value) {
+    keyW.value = ks.value;
+  }
+  node.setDirtyCanvas(true, true);
+}
+function ensureAsTypeValid(node) {
+  const w = getWidget(node, "as_type");
+  if (!w) return;
+  if (!AS_TYPE_ALLOWED.includes(w.value)) {
+    w.value = "string";          // harter Fallback, falls leer/ungültig
+    node.setDirtyCanvas(true, true);
+  }
 }
 
-function isCandidateNode(node) {
-  const hasStoreInput = !!(node.inputs || []).find(i => i && i.name === "store");
-  const hasKeyWidget = !!W(node, "key");
-  return hasStoreInput && hasKeyWidget;
-}
+// ---------- Extension ----------
+app.registerExtension({
+  name: "ComfyUI-KVTools.UI",
+  async setup() {
+    this._registry = await loadRegistry();
+  },
+  async nodeCreated(node) {
+    if (node.comfyClass !== "KVGet") return;
 
-function attachNode(node) {
-  if (!node || node.__kvtools_dropdown_attached) return;
-  if (!isCandidateNode(node)) return;
+    // (0) Sicherstellen, dass as_type gültig ist
+    ensureAsTypeValid(node);
 
-  loadRegistry().then(() => {
-    const keyW = W(node, "key");
-    if (!keyW) {
-      console.warn("[KVTools] node has no 'key' widget", node.id);
-      return;
+    // (A) Dropdown anlegen und GANZ NACH OBEN setzen
+    const ks = ensureWidget(node, "combo", WN.KEY_SELECT, "", null, { values: [] });
+    moveWidgetToTop(node, ks);
+
+    // (B) key + keys_hint + default + default_key unsichtbar
+    const keyW = getWidget(node, WN.KEY);
+    const hintW = getWidget(node, WN.KEYS_HINT);
+    hideWidget(keyW);
+    hideWidget(hintW);
+    hideWidget(getWidget(node, WN.DEFAULT));
+    hideWidget(getWidget(node, WN.DEFAULT_KEY));
+    // falls DOM spät kommt: noch einmal nach dem Rendern
+    setTimeout(() => { hideWidget(getWidget(node, WN.KEY)); hideWidget(getWidget(node, WN.KEYS_HINT)); }, 0);
+
+    // (C) Preview (read-only)
+    const prev = ensureWidget(node, "text", WN.PREVIEW, "", null);
+    if (prev?.inputEl) { prev.inputEl.readOnly = true; prev.inputEl.style.opacity = 0.9; }
+
+    // (D) Buttons
+    const randomBtn = ensureWidget(node, "button", WN.RANDOM, null, async () => {
+      const list = await getKeys(node, this._registry);
+      if (!list.length) return;
+      const pick = list[Math.floor(Math.random() * list.length)];
+      ks.value = pick;
+      const kW = getWidget(node, WN.KEY);
+      if (kW) kW.value = pick;
+      node.setDirtyCanvas(true, true);
+      await updatePreview(node, this._registry);
+    });
+    randomBtn.label = "🎲 Random key";
+
+    const refreshBtn = ensureWidget(node, "button", WN.REFRESH, null, async () => {
+      try { await fetch("/kvtools/refresh_registry", { method: "POST" }); } catch {}
+      this._registry = await loadRegistry();
+      await syncKeyList(node, this._registry);
+      await updatePreview(node, this._registry);
+      ensureAsTypeValid(node);   // sicherheitshalber erneut
+    });
+    refreshBtn.label = REFRESH_LABEL;
+
+    const setDefBtn = ensureWidget(node, "button", WN.SETDEF, null, async () => {
+      const dk = ensureWidget(node, "text", WN.DEFAULT_KEY, "", null);
+      hideWidget(dk);
+      dk.value = getWidget(node, WN.KEY)?.value || "";
+      node.setDirtyCanvas(true, true);
+    });
+    setDefBtn.label = "Set as default key";
+
+    const loadDefBtn = ensureWidget(node, "button", WN.LOADDEF, null, async () => {
+      const dk = ensureWidget(node, "text", WN.DEFAULT_KEY, "", null);
+      hideWidget(dk);
+      const kW = getWidget(node, WN.KEY);
+      if (dk?.value && kW) {
+        kW.value = dk.value;
+        ks.value = dk.value;
+        node.setDirtyCanvas(true, true);
+        await updatePreview(node, this._registry);
+      }
+    });
+    loadDefBtn.label = "Load default key";
+
+    // (E) Callbacks
+    ks.callback = async () => {
+      const kW = getWidget(node, WN.KEY);
+      if (kW) kW.value = ks.value || "";
+      node.setDirtyCanvas(true, true);
+      await updatePreview(node, this._registry);
+    };
+    if (keyW) {
+      const orig = keyW.callback;
+      keyW.callback = async () => {
+        if (orig) orig();
+        if (ks.options?.values?.includes(keyW.value)) ks.value = keyW.value;
+        node.setDirtyCanvas(true, true);
+        await updatePreview(node, this._registry);
+      };
     }
 
-    // Nur aufbauen, wenn Link gesetzt ist
-    const wait = setInterval(() => {
-      const inp = (node.inputs || []).find(i => i.name === "store");
-      if (inp && inp.link != null) {
-        clearInterval(wait);
-        buildCombo(node, keyW);
-        ensureAsTypeDefault(node);
+    // (F) Verbindungsänderungen
+    const origConn = node.onConnectionsChange?.bind(node);
+    node.onConnectionsChange = async (...args) => {
+      if (origConn) origConn(...args);
+      await syncKeyList(node, this._registry);
+      await updatePreview(node, this._registry);
+      ensureAsTypeValid(node);
+
+      const up = getInputNode(node, 0);
+      if (up?.comfyClass === "KVLoadFromRegistry") {
+        const fnW = getWidget(up, "file_name");
+        if (fnW && !fnW._kvtoolsHooked) {
+          fnW._kvtoolsHooked = true;
+          const orig = fnW.callback;
+          fnW.callback = async () => {
+            if (orig) orig();
+            this._registry = await loadRegistry();
+            await syncKeyList(node, this._registry);
+            await updatePreview(node, this._registry);
+            ensureAsTypeValid(node);
+          };
+        }
       }
-    }, 500);
-
-    const btn = node.addWidget("button", "KVTools: refresh keys", null, () => {
-      buildCombo(node, keyW);
-      ensureAsTypeDefault(node);
-    });
-    btn.serialize = false;
-
-    const orig = node.onConnectionsChange?.bind(node);
-    node.onConnectionsChange = function (type, index, connected, link_info) {
-      buildCombo(node, keyW);
-      ensureAsTypeDefault(node);
-      if (orig) orig(type, index, connected, link_info);
     };
 
-    node.__kvtools_dropdown_attached = true;
-    console.log("[KVTools] attached to node", node.id, "title:", node.title, "class:", node.comfyClass);
-  });
-}
-
-async function attachAll() {
-  await loadRegistry(); // <-- Warte auf Registry, bevor du weitermachst
-
-  if (!app.graph?._nodes?.length) return;
-
-  for (const n of app.graph._nodes) {
-    attachNode(n);
-  }
-
-  // Beobachte, ob später noch Nodes hinzukommen
-  const origAddNode = app.graph.add;
-  app.graph.add = function (node) {
-    const result = origAddNode.call(this, node);
-    attachNode(node);
-    return result;
-  };
-}
-
-
-app.registerExtension({
-  name: EXT,
-  setup() {
-    console.log("[KVTools] extension registered, waiting for graph…");
-    const wait = setInterval(() => {
-      if (app.graph) {
-        clearInterval(wait);
-        setTimeout(attachAll, 200);
+    // (G) Initial laden
+    setTimeout(async () => {
+      await syncKeyList(node, this._registry);
+      const dk2 = getWidget(node, WN.DEFAULT_KEY);
+      const kW2 = getWidget(node, WN.KEY);
+      if (dk2?.value && kW2 && !kW2.value) {
+        kW2.value = dk2.value;
+        ks.value = dk2.value;
       }
-    }, 200);
+      moveWidgetToTop(node, ks);
+      ensureAsTypeValid(node);
+      node.setDirtyCanvas(true, true);
+      await updatePreview(node, this._registry);
+    }, 0);
   }
 });
