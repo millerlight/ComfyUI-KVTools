@@ -2,7 +2,7 @@
 
 Utility nodes for key/value (KV) workflows in ComfyUI — with live previews, auto-updates, and a safe **Edit mode** for inline KV data.
 
-## ✨ What’s inside
+## 🧩 Nodes
 
 - **KV Load Inline** – type/paste KV data (JSON or `key=value` lines).
 
@@ -27,10 +27,16 @@ Utility nodes for key/value (KV) workflows in ComfyUI — with live previews, au
 
 ## 📁 Registry & file layout
 
-- Place your files here:
+- Place your JSON files here:
   ```
-  <ComfyUI>/custom-kv-stores/*.json
+  <ComfyUI>/custom-kv-stores/<filename>.json
   ```
+- Place optional images here:
+  ```
+  <ComfyUI>/custom-kv-stores/images/<filename>/
+  ```
+  Give your images the same name as the corresponding key in the JSON file.
+
   Each must be **simple key-value JSON**:
   ```json
   {
@@ -47,48 +53,6 @@ Utility nodes for key/value (KV) workflows in ComfyUI — with live previews, au
   - `POST /kvtools/refresh_registry` – rebuild/refresh registry cache
   - `POST /kvtools/peek` – read a single value `{file_name, key}`
   - `GET  /kvtools/image?file=...&key=...&ext=...` – build image URL for previews
-
----
-
-## 🧩 Nodes
-
-### KV Load Inline
-- **Input**: none  
-- **Output**: KV store
-- **Data formats**:
-  - **JSON** object of key/value pairs, or
-  - **`.env` style** lines: `key=value` (one per line)
-- **Edit mode** (toggle in the node):
-  - **ON**: text field is editable; node output is disabled; previews downstream are blank; autoruns are paused.
-  - **OFF**: text field is locked; node output is enabled; connected **KV Get** updates previews; one run is queued.
-
-### KV Load From Registry
-- **Input**: none  
-- **Outputs**:
-  - **store** (KV object derived from the selected JSON file)
-  - **path** (base path for optional images)
-- **UI**:
-  - Dropdown for **file_name** (populated from the registry)
-  - Changing the file triggers **automatic** key/preview updates on connected **KV Get**.
-
-### KV Get
-- **Input**: `store` (from **KV Load Inline** or **KV Load From Registry**)
-- **Outputs**:
-  - **value** (cast to selected type)
-  - **key** (currently selected key)
-- **UI**:
-  - **key_select** (dropdown, auto-filled from upstream)
-  - **as_type**: output type (`string | int | float | bool`)
-  - **_kvtools_preview_value** (read-only value preview)
-  - Buttons:
-    - **KVTools: refresh keys** – rebuild list (normally not needed thanks to autosync)
-    - **Random key**
-    - **Set default (current key)** / **Load default**
-
-### KV Image Path From Registry (helper)
-- **Input**: registry **path**, selected **key**, optional **ext** (`png` default)
-- **Output**: constructed image path/URL → connect to ComfyUI’s **Preview Image** to show it.
-
 ---
 
 ## 🚀 Installation
@@ -108,37 +72,6 @@ Restart ComfyUI afterwards.
 
 > After updating the frontend (`web/js/extension.js`), **hard-reload** your browser (Ctrl/Cmd+Shift+R) to ensure the latest UI is loaded.
 
----
-
-## 🧭 Usage patterns
-
-### A) Inline store, safe editing
-1. Add **KV Load Inline** and **KV Get**; connect `store → KV Get`.
-2. Toggle **Edit mode ON** on **KV Load Inline**, paste or type your KV.
-3. Toggle **Edit mode OFF**:
-   - Inline text locks
-   - **KV Get** previews update
-   - A run is queued for downstream
-
-### B) Registry store + image preview
-1. Put `*.json` files in `<ComfyUI>/custom-kv-stores/`.
-2. Add **KV Load From Registry** and **KV Get**; connect `store`.
-3. Pick a **file_name** – **KV Get** updates automatically.
-4. To show images:
-   - Add **KV Image Path From Registry**, connect **path** (from registry loader) and **key** (from KV Get).
-   - Connect to **Preview Image**. The preview refreshes as you change the key.
-
----
-
-## ⚙️ Casting & types
-
-**KV Get → as_type** controls the output value type:
-- `string` (default)
-- `int`
-- `float`
-- `bool`
-
-If an old workflow loads with a blank type, it defaults to **string**.
 
 ---
 
