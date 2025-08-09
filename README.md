@@ -1,61 +1,29 @@
 # ComfyUI-KVTools
 
-Small utility nodes for key/value workflows in ComfyUI.
-Custom JSON key-value pairs from multiple external files. 
+Utility nodes for key/value (KV) workflows in ComfyUI — with live previews, auto-updates, and a safe **Edit mode** for inline KV data.
 
-## Nodes
-- **KV Load Inline** – type/paste JSON or `key=value` lines; emits a KV store.
-- **KV Load From Registry** – dropdown of JSON files found in `./custom_kv_stores` (UTF-8).
-- **KV Get** – pick a key (dropdown) and output its value (optionally cast to string/int/float/bool). Also outputs all keys as text.
+## ✨ What’s inside
 
-## Installation
-### With ComfyUI-Manager
-1. In ComfyUI, open **Manager → Install via URL**.
-2. Paste the repository URL (e.g., `https://github.com/millerlight/ComfyUI-KVTools`) and install.
-3. **Restart ComfyUI**.
+- **KV Load Inline** – type/paste KV data (JSON or `key=value` lines).
+  ✅ **Edit mode** toggle: edit safely with node output disabled; lock the text when done.
 
-### Manual
-```bash
-cd /path/to/ComfyUI/custom_nodes
-git clone https://github.com/millerlight/ComfyUI-KVTools.git
-# or unzip the archive into this folder
-```
-Restart ComfyUI afterwards.
+- **KV Load From Registry** – pick a JSON file from a registry that’s built automatically from `<ComfyUI>/custom-kv-stores/*.json`.
 
-## Usage
-- For **KV Load From Registry**, create a directory and put your JSON files into it:
-  ```
-  <ComfyUI>/custom_kv_stores/*.json
-  ```
-  Be careful, your json files must be in the correct format (just key/value pairs):
-  ```
-  {
-     "speaker": "Tom",
-     "speak": "hello"
-  }
-  ```
-  On startup, a registry file is written to:  
-  `custom_nodes/ComfyUI-KVTools/web/kv_registry.json` (served at `/extensions/ComfyUI-KVTools/kv_registry.json`).
+- **KV Get** – central node: shows a **key dropdown** and **live value preview**; choose an output **type** (`string | int | float | bool`).
+  Extra UI: **Refresh keys**, **Random key**, **Set default**, **Load default**.
 
-- The **KV Get** node shows a **dropdown** of keys without pressing Run. It prefers keys from an upstream file loader (via registry); otherwise it reads keys directly from an inline loader connected to its `store` input.
+- **KV Image Path From Registry** (helper) – builds an image path from a selected registry key (e.g. `png`, `jpg`) to use with ComfyUI’s **Preview Image**.
 
-- All reading is **UTF‑8**, and format is **auto-detected** (`json` or `key=value` per line).
+### On-the-fly behavior (no manual Run needed for previews)
 
-## Troubleshooting
-- After updating, **clear the browser cache** or do a **hard reload (Ctrl+F5)** to ensure the frontend JS is reloaded.
-- If the dropdown doesn’t appear, confirm the web assets are served:
-  - `http://127.0.0.1:8188/extensions/ComfyUI-KVTools/extension.js`
-  - `http://127.0.0.1:8188/extensions/ComfyUI-KVTools/kv_registry.json`
-- If an old workflow loads with a blank `as_type`, the node defaults to **string** automatically.
-- If you are using the KV Load from Registry node for the first time and there is no file_name choosable
-  from the dropdown menu ensure that you have the directory for the custom_kv_stores and valid json files inside.
-  Then restart ComfyUI again and clear the browser cache again.
-- If you are able to choose the file_name in the KV Load from Registry, but you do not see keys in KV Get Value
-  please click on the button KVTools: refresh keys
+- As soon as a store is connected to **KV Get**, its **key dropdown** and **value preview** populate immediately.
+- Switching the **registry file** updates KV Get automatically (no manual “refresh” needed).
+- **Image preview updates automatically** when the selected key changes.
 
-## custom_kv_stores
-- artists-and-styles.json (1500 artists and their styles as prompt)
-- nc-styles.json (expandable style prompts)
+> The extension also **queues a run** in a debounced, robust way for downstream processing. While you’re editing inline data, runs are intentionally **suppressed** to keep things stable.
 
-## License
-MIT
+---
+
+## 📁 Registry & file layout
+
+- Place your files here:
