@@ -1,14 +1,15 @@
+# Version: x-0
 # __init__.py in custom_nodes/ComfyUI-KVTools
-# - Registry-Scan für Frontend-Dropdown
-# - Sichere Web-Endpunkte:
+# - Registry scan for the frontend dropdown
+# - Safe web endpoints:
 #     GET  /kvtools/image?file=<jsonNameOrPath>&key=<key>&ext=png
 #     POST /kvtools/refresh_registry
 #     POST /kvtools/peek   {file_name|path, key}  -> {"ok":true,"value":...}
 
 import os, json, re
 
-# --- KERN: Node-Implementierung
-from . import kv_nodes  # relativer Import!
+# --- CORE: node implementation
+from . import kv_nodes  # relative import!
 
 NODE_CLASS_MAPPINGS = kv_nodes.NODE_CLASS_MAPPINGS
 NODE_DISPLAY_NAME_MAPPINGS = kv_nodes.NODE_DISPLAY_NAME_MAPPINGS
@@ -50,7 +51,7 @@ def _sanitize_name(s: str) -> str:
 
 def _json_basename_from_param(file_or_path: str) -> str:
     """
-    Nimmt entweder "foo.json" oder einen vollständigen Pfad und liefert "foo".
+    Accepts either "foo.json" or a full path and returns "foo".
     """
     if not file_or_path:
         return ""
@@ -58,17 +59,17 @@ def _json_basename_from_param(file_or_path: str) -> str:
     base, _ = os.path.splitext(base)
     return _sanitize_name(base)
 
-# --- Registry beim Start erzeugen
+# --- Build registry at startup
 try:
     _write(_scan())
     print("[ComfyUI-KVTools] registry written:", REG_PATH)
 except Exception as e:
     print("[ComfyUI-KVTools] registry build failed:", e)
 
-# --- Web-Endpunkte (nur im ComfyUI-Kontext vorhanden)
+# --- Web endpoints (only when running inside ComfyUI)
 try:
     from aiohttp import web
-    from server import PromptServer  # ComfyUI-intern
+    from server import PromptServer  # ComfyUI-internal
 
     # POST /kvtools/refresh_registry  -> {"ok":true, "written": ".../kv_registry.json"}
     @PromptServer.instance.routes.post("/kvtools/refresh_registry")
@@ -81,7 +82,7 @@ try:
             return web.json_response({"ok": False, "error": str(e)}, status=500)
 
     # POST /kvtools/peek  {file_name|path, key} -> {"ok":true,"value": "..."}
-    # liest einen Wert aus einer JSON im BASE_DIR, keine Pfade außerhalb.
+    # reads a value from a JSON in BASE_DIR, no paths outside allowed.
     @PromptServer.instance.routes.post("/kvtools/peek")
     async def kvtools_peek(request):
         try:
@@ -109,14 +110,14 @@ try:
             return web.json_response({"ok": False, "error": str(e)}, status=500)
 
     # GET /kvtools/image?file=<jsonNameOrPath>&key=<key>&ext=png
-    # Liefert NUR Bilder aus <ComfyUI>/custom_kv_stores/images/<json-basis>/<key>.<ext>
+    # Serves ONLY images from <ComfyUI>/custom_kv_stores/images/<json-base>/<key>.<ext>
     @PromptServer.instance.routes.get("/kvtools/image")
     async def kvtools_image(request):
         params = request.rel_url.query
         file_or_path = params.get("file") or params.get("registry") or params.get("path") or ""
         key = params.get("key") or ""
         ext = params.get("ext") or "png"
-        ext = "png" if ext.lower() != "png" else "png"  # fest auf png
+        ext = "png" if ext.lower() != "png" else "png"  # fixed to png
 
         json_base = _json_basename_from_param(file_or_path)
         if not json_base or not key:
@@ -126,7 +127,7 @@ try:
         fname  = f"{_sanitize_name(key)}.{ext}"
         full   = os.path.join(folder, fname)
 
-        # Whitelist check: Muss unter IMAGES_ROOT bleiben
+        # Whitelist check: must stay under IMAGES_ROOT
         if not os.path.abspath(full).startswith(os.path.abspath(IMAGES_ROOT)):
             raise web.HTTPForbidden()
 
@@ -138,5 +139,5 @@ try:
     print("[ComfyUI-KVTools] web endpoints ready (/kvtools/*)")
 
 except Exception as e:
-    # Außerhalb von ComfyUI (reine Py-Umgebung) ignorieren wir die Endpunkte.
+    # Outside of ComfyUI (pure Python env) we ignore the endpoints.
     print("[ComfyUI-KVTools] web endpoints not active:", e)

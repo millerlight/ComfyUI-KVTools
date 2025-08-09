@@ -1,14 +1,11 @@
-// ComfyUI-KVTools — Frontend (Overlay-Preview mit Spacer-Stack + Random-Start + On-the-fly)
-//
-// Kernpunkte dieses Builds:
-// - Bild-Preview wird als Foreground-Overlay gezeichnet (stabil über Builds).
-// - Platz für die Preview wird *garantiert*, indem ein Spacer-Stack aus N Widgets
-//   eingefügt wird (jedes ~20px hoch). So erreichen wir zuverlässig ~140px,
-//   selbst wenn LiteGraph computeSize ignoriert.
-// - Random-Start (Dropdown + Previews), Edit-Mode, Text-Preview, Buttons,
-//   Autorun etc. bleiben wie gehabt.
-//
-// Wenn du die Zielhöhe ändern willst: KV_PREVIEW_HEIGHT anpassen.
+// ComfyUI-KVTools — Frontend
+// Version: x-0
+// - Dropdown (key_select) + Text-Preview + Bild-Preview
+// - Buttons: refresh / random / default set & load
+// - Inline edit for KVLoadInline (pause outputs while editing)
+// - Autorun + Queue-Prompt-Fallback
+// - Random autorun: when random=true, do NOT default to the first key; pick randomly earlier
+// - Registry-Helpers (peek/image)
 
 import { app } from "/scripts/app.js";
 import { api } from "/scripts/api.js";
@@ -16,11 +13,11 @@ import { api } from "/scripts/api.js";
 const EXT_NAME = "ComfyUI-KVTools.UI";
 const KVTOOLS_AUTORUN = true;
 
-// --- Preview-Zielhöhe & Layout ---
-const KV_PREVIEW_HEIGHT = 140;     // gewünschte Preview-Höhe
-const KV_PREVIEW_GAP = 6;          // unsichtbar: kleiner Abstand
-const KV_UNIT_FALLBACK = 20;       // erwartete Standardhöhe pro Widget (dein Log: 20)
-const KV_DEBUG_LAYOUT = false;     // bei Bedarf auf true für Layout-Logs
+// --- Preview target height & layout ---
+const KV_PREVIEW_HEIGHT = 140;     // desired preview height
+const KV_PREVIEW_GAP = 6;          // when hidden: small gap
+const KV_UNIT_FALLBACK = 20;       // expected default per-widget height (your build: 20)
+const KV_DEBUG_LAYOUT = false;     // set true for layout logs
 
 let kvtoolsIsProcessing = false;
 api.addEventListener("status", (e) => { kvtoolsIsProcessing = !!e?.detail?.processing; });
@@ -105,7 +102,7 @@ function keysFromRegistryByFile(fileName) {
 }
 
 // -----------------------------------------------------
-// Text-Preview (ohne Run)
+// Text preview (without Run)
 // -----------------------------------------------------
 function ensurePreviewWidget(node) {
   let pv = W(node, "_kvtools_preview_value");
@@ -136,39 +133,10 @@ async function updateTextPreview(node) {
 }
 
 // -----------------------------------------------------
-// Bild-Preview: Overlay + Spacer-Stack (Height-Shim)
+// Image preview: primary spacer draws image; extra spacers reserve height
 // -----------------------------------------------------
 
-// Installiert einmalig den Foreground-Overlay-Draw
-function ensureForegroundOverlay(node){
-  if (node.__kvtools_fg_hook) return;
-  const origFg = node.onDrawForeground?.bind(node);
-  node.onDrawForeground = function(ctx){
-    if (origFg) origFg(ctx);
-    const r = this.__kv_img_rect;
-    if (!r || !this.__kv_img_visible || !this.__kv_img) return;
-
-    // Rahmen + Hintergrund
-    ctx.save();
-    ctx.fillStyle = "#111";
-    ctx.fillRect(r.x, r.y, r.w, r.h);
-    ctx.strokeStyle = "#333";
-    ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
-
-    // Bild "contain"
-    const img = this.__kv_img;
-    const iw = img.naturalWidth || 1, ih = img.naturalHeight || 1;
-    const arI = iw/ih, arB = r.w/r.h;
-    let dw, dh, dx, dy;
-    if (arI > arB) { dw = r.w - 10; dh = dw / arI; dx = r.x + 5; dy = r.y + (r.h - dh)/2; }
-    else           { dh = r.h - 10; dw = dh * arI; dx = r.x + (r.w - dw)/2; dy = r.y + 5; }
-    ctx.drawImage(img, dx, dy, dw, dh);
-    ctx.restore();
-  };
-  node.__kvtools_fg_hook = true;
-}
-
-// Primärer Spacer (liefert y/width/unitHeight); Extra-Spacer erhöhen die Gesamthöhe
+// Primary spacer (draws the image and defines rect/height)
 function ensureImagePreviewPrimary(node){
   let w = W(node, "_kvtools_img_sp0");
   if (w) return w;
@@ -184,40 +152,45 @@ function ensureImagePreviewPrimary(node){
     name: "_kvtools_img_sp0",
     serialize: false,
     __unit: KV_UNIT_FALLBACK,
-    __visible: true,
+    __visible: true,   // only 'large' when there is actually an image
 
-    // Zeichnen im Widget selbst (immer sichtbar, kein Overlay nötig)
+    // We return the height; the framework passes 'width' into draw()
+    computeSize(width) {
+      if (!this.__visible) return [width || 0, KV_PREVIEW_GAP]; // If no image is present → keep a single-line gap
+      return [width || 0, this.__unit];
+    },
+
+    // Draw inside the widget area (with left/right padding)
     draw(ctx, nodeRef, widgetWidth, y, height) {
       const nodeW = (nodeRef.size && nodeRef.size[0]) || 320;
       const wIn = Math.max(0, (widgetWidth ?? nodeW) - 20);
       const x = 10;
 
-      // Unit-Höhe aus realem Draw ableiten (meist 20)
+      // read actual unit height (most builds ~20)
       this.__unit = height || KV_UNIT_FALLBACK;
 
-      // Anzahl Extra-Spacer (falls vorhanden)
+      // total reserved height = unit * (1 + extra spacers)
       const extraCount = Array.isArray(nodeRef.__kv_img_spacers) ? nodeRef.__kv_img_spacers.length : 0;
       const totalH = this.__visible ? (this.__unit * (1 + extraCount)) : KV_PREVIEW_GAP;
 
-      // Zielrechteck merken (lokale Node-Koordinaten)
       nodeRef.__kv_img_rect = { x, y, w: wIn, h: totalH };
 
-      // Hintergrund / Rahmen (dezent)
+      // background & border
       ctx.save();
       ctx.fillStyle = "#111";
       ctx.fillRect(x, y, wIn, totalH);
       ctx.strokeStyle = "#333";
       ctx.strokeRect(x + 0.5, y + 0.5, wIn - 1, totalH - 1);
 
-      // Bild zeichnen, wenn vorhanden & sichtbar
+      // draw image if available
       if (this.__visible && nodeRef.__kv_img && nodeRef.__kv_img_visible) {
         const img = nodeRef.__kv_img;
         const iw = img.naturalWidth || 1, ih = img.naturalHeight || 1;
         const arI = iw / ih, arB = wIn / totalH;
         let dw, dh, dx, dy;
-        if (arI > arB) { // an Breite anpassen
+        if (arI > arB) {                   // wider than the area → fit to width
           dw = wIn - 10; dh = dw / arI; dx = x + 5; dy = y + (totalH - dh) / 2;
-        } else {         // an Höhe anpassen
+        } else {                           // taller than area → fit to height
           dh = totalH - 10; dw = dh * arI; dx = x + (wIn - dw) / 2; dy = y + 5;
         }
         ctx.drawImage(img, dx, dy, dw, dh);
@@ -230,31 +203,30 @@ function ensureImagePreviewPrimary(node){
   return w;
 }
 
-
-// Erzeugt/aktualisiert den Spacer-Stack, damit insgesamt ~KV_PREVIEW_HEIGHT reserviert wird
+// Create/adjust spacer stack to reach ~KV_PREVIEW_HEIGHT
 function ensureSpacerStack(node, visible=true) {
   const sp0 = ensureImagePreviewPrimary(node);
 
-  // Falls Unit noch nicht bekannt, Fallback nutzen
+  // if unit not known yet, use fallback
   const unit = sp0.__unit || KV_UNIT_FALLBACK;
 
-  // Zielhöhe
+  // target height
   const target = visible ? KV_PREVIEW_HEIGHT : KV_PREVIEW_GAP;
 
-  // Benötigte Extra-Widgets (abzgl. Primär)
+  // number of extra spacers (primary already contributes one unit)
   const needExtras = visible ? Math.max(0, Math.ceil(target / unit) - 1) : 0;
 
-  // Aktuelle Liste pflegen
+  // current extras
   const current = Array.isArray(node.__kv_img_spacers) ? node.__kv_img_spacers : (node.__kv_img_spacers = []);
 
-  // Überzählige entfernen
+  // remove surplus
   while (current.length > needExtras) {
     const w = current.pop();
     const idx = node.widgets.indexOf(w);
     if (idx >= 0) node.widgets.splice(idx, 1);
   }
 
-  // Fehlende hinzufügen (als reine Platzhalter)
+  // add missing extras
   const addCW = (spec)=>{
     if (typeof node.addCustomWidget === "function") return node.addCustomWidget(spec);
     const fw = node.addWidget("string", spec.name, "", null);
@@ -266,23 +238,20 @@ function ensureSpacerStack(node, visible=true) {
     const w = addCW({
       name: `_kvtools_img_sp${idx}`,
       serialize: false,
-      draw(ctx, nodeRef, widgetWidth, y, height) {
-        // absichtlich leer – der Primär-Spacer zeichnet die gesamte Fläche inkl. Bild
-      },
+      draw(ctx, nodeRef, widgetWidth, y, height) { /* placeholder only */ },
     });
     current.push(w);
   }
 
-  // Sichtbarkeit für den Primär-Spacer (steuert Bild/Fläche)
+  // visibility of the primary spacer controls reserved area & image drawing
   sp0.__visible = !!visible;
 
-  // Reihenfolge: gesamter Block nach oben, Primär zuletzt
+  // keep stack together and on top: extras first (reverse), primary last
   for (let i = current.length - 1; i >= 0; i--) moveWidgetToTop(node, current[i].name);
   moveWidgetToTop(node, sp0.name);
 }
 
-
-// Erzwungenes Re-Layout + Optionallog
+// enforce re-layout (+ optional logging)
 function kvRelayout(node, reason="") {
   try {
     node.widgets_dirty = true;
@@ -304,7 +273,7 @@ function kvRelayout(node, reason="") {
   } catch(e){ console.warn("[KVTools] relayout error",e); }
 }
 
-// URL-Aufbau wie gehabt
+// URL build unchanged
 function buildImageURL(node, key, ext) {
   const file = upstreamFileName(node); if (!file || !key) return "";
   const u = new URL(location.origin + "/kvtools/image");
@@ -315,11 +284,11 @@ function buildImageURL(node, key, ext) {
   return u.toString();
 }
 
-// Hauptaktualisierung: Stack + Bild
+// Main update: stack + image load
 function updateImagePreview(node, force=false) {
   const up = upstreamNode(node);
 
-  // Inline-Edit → unsichtbar + kein Bild
+  // no preview while inline edit is active
   if (up?.comfyClass === "KVLoadInline" && up.__kv_edit === true) {
     ensureSpacerStack(node, false);
     node.__kv_img = null; node.__kv_img_visible = false;
@@ -327,17 +296,14 @@ function updateImagePreview(node, force=false) {
     return;
   }
 
-  // Sichtbarkeit aus Key ableiten
   const key = String(W(node,"key_select")?.value || W(node,"key")?.value || "").trim();
   const visible = !!key;
 
-  // Stack aufbauen/angleichen
   ensureSpacerStack(node, visible);
   kvRelayout(node, visible ? "preview-visible" : "preview-hidden");
 
   if (!visible) { node.__kv_img = null; node.__kv_img_visible = false; return; }
 
-  // Bild laden (Overlay)
   const ip  = (app.graph?._nodes || []).find((n)=>n.comfyClass==="KVImagePathFromRegistry");
   const ext = String(ip?.widgets?.find((w)=>w.name==="ext")?.value || "png");
   const url = buildImageURL(node, key, ext);
@@ -352,7 +318,7 @@ function updateImagePreview(node, force=false) {
 }
 
 // -----------------------------------------------------
-// Random (UI) + Autorun-Orchestrierung
+// Random (UI) + autorun orchestration
 // -----------------------------------------------------
 function hasRandomEnabled(node) {
   const rw = W(node,"random");
@@ -394,7 +360,7 @@ async function startRandomizeKVGet(node){
     node.__kvtools_random_bootstrapped = true;
     const ks = W(node,"key_select"); const keyW = W(node,"key"); if(!ks||!keyW) return;
 
-    // warten bis keys da sind
+    // wait until keys are available
     for(let i=0;i<12;i++){
       let keys = (ks.options && Array.isArray(ks.options.values)) ? ks.options.values : [];
       if(!keys||!keys.length){ try{ keys = collectKeys(node)||[]; }catch{} }
@@ -484,7 +450,7 @@ async function preRunRandomAll(){
 async function tryQueueRun(delay=200){
   if(!KVTOOLS_AUTORUN || !app?.graph || kvtoolsIsProcessing) return;
 
-  await preRunRandomAll(); // Random (falls extern verbunden) vor dem Run
+  await preRunRandomAll(); // Random (if externally connected) before the run
 
   const now=Date.now();
   if(kvRunLock.busy || (now-kvRunLock.last)<kvRunLock.cooldownMs) return;
@@ -509,7 +475,7 @@ async function tryQueueRun(delay=200){
   }, delay);
 }
 
-// manuellen Queue-Hook (Random vorher)
+// hook manual queue: random first
 (function wrapQueuePrompt(){
   const orig = app.queuePrompt;
   if(!orig || app.__kvtools_wrapped_queue) return;
@@ -518,7 +484,7 @@ async function tryQueueRun(delay=200){
 })();
 
 // -----------------------------------------------------
-// UI auf KVGet + Inline-Edit
+// UI for KVGet + inline edit
 // -----------------------------------------------------
 function ensureKeySelectCombo(node){ let ks=W(node,"key_select"); if(!ks){ ks=node.addWidget("combo","key_select","",null,{values:[]}); ks.serialize=false; } return ks; }
 function ensureRefreshButton(node){
@@ -562,7 +528,7 @@ function hideBuiltIns(node){
   hideWidget(node,"keys_hint");
   hideWidget(node,"default");
   hideWidget(node,"default_key");
-  hideWidget(node,"random"); // random im UI ausblenden, Port bleibt nutzbar
+  hideWidget(node,"random"); // random hidden in UI; port still works
 }
 
 async function syncKeyList(node){
@@ -578,13 +544,14 @@ async function syncKeyList(node){
   }
   ks.options.values = Array.isArray(keys) ? keys : [];
 
+  // do not overwrite; only align if valid
   if(!ks.options.values.includes(ks.value)) ks.value = ks.options.values[0] ?? "";
   keyW.value = ks.value || keyW.value || "";
 
   node.setDirtyCanvas(true,true);
 }
 
-// Inline-Edit (KVLoadInline)
+// Inline edit (KVLoadInline)
 function setTextEditable(widget, editable){
   if(!widget) return;
   try{
@@ -657,17 +624,14 @@ function ensureInlineEditToggle(inlineNode){
 }
 
 // -----------------------------------------------------
-// Hooks + Registrierung
+// Hooks + registration
 // -----------------------------------------------------
 function isKVGet(node){ return node?.comfyClass==="KVGet"; }
 function ensureTopOrder(node){
-  // Reihenfolge: gesamter Image-Stack → Preview-Text → key_select
-  if (Array.isArray(node.__kv_img_spacers)) {
-    for (let i=node.__kv_img_spacers.length-1;i>=0;i--) moveWidgetToTop(node, node.__kv_img_spacers[i].name);
-  }
-  moveWidgetToTop(node, "_kvtools_img_sp0");
-  moveWidgetToTop(node, "_kvtools_preview_value");
-  moveWidgetToTop(node, "key_select");
+  // Order: key_select → _kvtools_preview_value → _kvtools_img_preview
+  moveWidgetToTop(node, "_kvtools_img_preview");     // bring to top first …
+  moveWidgetToTop(node, "_kvtools_preview_value");   // … then above it
+  moveWidgetToTop(node, "key_select");               // … and the dropdown at the very top
 }
 
 function attachToKVGet(node){
@@ -677,7 +641,7 @@ function attachToKVGet(node){
   hideBuiltIns(node); ensureAsTypeDefault(node);
 
   ensurePreviewWidget(node);
-  ensureSpacerStack(node, true); // Stack anlegen
+  ensureSpacerStack(node, true); // ensure stack exists
   const ks=ensureKeySelectCombo(node);
   const keyW=W(node,"key");
   ensureRefreshButton(node); ensureRandomButton(node); ensureDefaultKeyStorage(node); ensureDefaultButtons(node);
@@ -713,7 +677,7 @@ function attachToKVGet(node){
     await tryQueueRun();
   };
 
-  // Initial attach
+  // Initial attach → early random initialization & first run
   const wait=setInterval(async ()=>{
     const up=upstreamNode(node);
     if(up){
@@ -726,7 +690,9 @@ function attachToKVGet(node){
       await updateTextPreview(node);
       updateImagePreview(node,true);
 
-      setTimeout(()=>{ preRunRandomAll(); },60);
+      // Kick early: first randomize all KVGet, then run
+      setTimeout(()=>{ startRandomizeAllKVGets(); },40);
+      setTimeout(()=>{ preRunRandomAll(); },80);
       setTimeout(()=>{ tryQueueRun(140); },140);
     }
   },150);
@@ -774,7 +740,7 @@ function hookUpstream(node){
   }
 }
 
-// Registrierung
+// registration
 app.registerExtension({
   name: EXT_NAME,
   setup(){
@@ -785,9 +751,9 @@ app.registerExtension({
         for(const n of app.graph._nodes) attachToKVGet(n);
         for(const n of app.graph._nodes) if(n.comfyClass==="KVLoadInline") ensureInlineEditToggle(n);
 
-        // 1) Alle KVGet-Keys zufällig setzen (Dropdown + Preview füllen)
+        // 1) First randomize ALL KVGet keys (fill dropdown + preview) – always, independent of the random flag
         setTimeout(()=>{ startRandomizeAllKVGets(); },40);
-        // 2) Dann externe Randoms & autorun
+        // 2) Then as before your two async blocks: first random/sync, then autorun
         setTimeout(()=>{ try{ preRunRandomAll(); }catch{} },80);
         setTimeout(()=>{ try{ tryQueueRun(140); }catch{} },140);
 

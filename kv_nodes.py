@@ -1,8 +1,9 @@
-# ComfyUI-KVTools: Key/Value Utilities + sicherer Image-Preview-Loader
-# Random-Logik (KVGet):
-#   - Wenn 'random' True ist, wird NUR dann zufällig gewählt, wenn
-#     kein gültiger Key aus dem UI/Workflow übergeben wurde.
-#   - So bleibt UI (Dropdown/Preview) = Backend-Output.
+# Version: x-0
+# ComfyUI-KVTools: Key/Value utilities + safe image preview loader
+# Random logic (KVGet):
+#   - If 'random' is True, pick randomly ONLY when
+#     no valid key is provided by the UI/workflow.
+#   - This keeps UI (dropdown/preview) == backend output.
 
 import json
 import re
@@ -11,7 +12,7 @@ import os
 print("[KVTools] loaded from", __file__)
 
 # ---------------------------------------------------------------------
-# Parsing/Dumping Helpers
+# Parsing/Dumping helpers
 # ---------------------------------------------------------------------
 
 def _parse_data(data: str, fmt: str):
@@ -37,12 +38,12 @@ def _parse_data(data: str, fmt: str):
                 continue
             m = re.match(r"^\s*([^=:#]+)\s*[:=]\s*(.*)\s*$", line)
             if not m:
-                raise ValueError(f"not a valid KV-line: {line}")
+                raise ValueError(f"Invalid KV line: {line}")
             k, v = m.group(1).strip(), m.group(2).strip()
             out[k] = v
         return out
     else:
-        raise ValueError(f"Unknown Format: {fmt}")
+        raise ValueError(f"Unknown format: {fmt}")
 
 def _cast_to_output_string(value, as_type: str) -> str:
     if as_type == "int":
@@ -71,7 +72,7 @@ class KVLoadInline:
             "required": {
                 "data": ("STRING", {"multiline": True, "placeholder":
                     "{\n  \"speaker\":\"Tom\",\n  \"lang\":\"de\"\n}\n"
-                    "# oder:\n# speaker=Tom\n# lang=de"}),
+                    "# or:\n# speaker=Tom\n# lang=de"}),
             }
         }
     RETURN_TYPES = ("KV",)
@@ -84,11 +85,11 @@ class KVLoadInline:
         return (store,)
 
 class KVGet:
-    """Liest (value, key) aus einem Store.
+    """Reads (value, key) from a store.
 
     random (Boolean/String):
-      - Wenn True → NUR zufällig wählen, wenn kein gültiger Key übergeben wurde.
-      - Dadurch ist der vom UI gewählte Key maßgeblich (Dropdown/Preview == Output).
+      - If True → choose randomly ONLY when no valid key was provided.
+      - This makes the key chosen in the UI authoritative (Dropdown/Preview == output).
     """
     CATEGORY = "KVTools"
     FUNCTION = "kv_get"
@@ -124,12 +125,12 @@ class KVGet:
         key = (key or "").strip()
         default = "" if default is None else default
 
-        # optional: default_key nutzen, falls kein key anliegt
+        # optional: use default_key if no key is provided
         default_key = kwargs.get("default_key", "")
         if not key and default_key:
             key = str(default_key).strip()
 
-        # Nur dann random wählen, wenn KEIN gültiger Key übergeben ist
+        # Choose randomly only when NO valid key is provided
         if random_flag and (not key or key not in store):
             try:
                 keys = list(store.keys())
@@ -171,7 +172,7 @@ class KVLoadFromRegistry:
         store = _parse_data(text, "auto")
         return (store, path)
 
-# ---------- Image Pfad / Preview ----------
+# ---------- Image path / preview ----------
 
 def _images_root():
     return os.path.join(os.getcwd(), "custom_kv_stores", "images")
