@@ -1,0 +1,561 @@
+{
+  "id": "6bdc858f-eb41-4659-9cb5-6551c2902d56",
+  "revision": 0,
+  "last_node_id": 49,
+  "last_link_id": 76,
+  "nodes": [
+    {
+      "id": 39,
+      "type": "KVPreviewImageFromRegistry",
+      "pos": [
+        1050.468505859375,
+        2998.849365234375
+      ],
+      "size": [
+        307.5999755859375,
+        78
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "key",
+          "type": "STRING",
+          "link": 71
+        },
+        {
+          "name": "registry_path",
+          "type": "STRING",
+          "link": 60
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            61
+          ]
+        },
+        {
+          "name": "path",
+          "type": "STRING",
+          "links": [
+            62
+          ]
+        }
+      ],
+      "properties": {
+        "aux_id": "millerlight/ComfyUI-KVTools",
+        "ver": "7038425a29d0f90d96947102a9d6e75694b59f70",
+        "Node name for S&R": "KVPreviewImageFromRegistry"
+      },
+      "widgets_values": [
+        "png"
+      ]
+    },
+    {
+      "id": 38,
+      "type": "easy showAnything",
+      "pos": [
+        1430.26318359375,
+        3128.68798828125
+      ],
+      "size": [
+        210,
+        88
+      ],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "anything",
+          "shape": 7,
+          "type": "*",
+          "link": 62
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "*",
+          "links": []
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-easy-use",
+        "ver": "1.3.1",
+        "Node name for S&R": "easy showAnything"
+      },
+      "widgets_values": [
+        "/home/clickibunti/PycharmProjects/ComfyUI/custom_kv_stores/images/artists-and-styles/A.J.Casson.png"
+      ]
+    },
+    {
+      "id": 35,
+      "type": "easy showAnything",
+      "pos": [
+        1219.5640869140625,
+        2814.537353515625
+      ],
+      "size": [
+        210,
+        88
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "anything",
+          "shape": 7,
+          "type": "*",
+          "link": 70
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "*",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-easy-use",
+        "ver": "1.3.1",
+        "Node name for S&R": "easy showAnything"
+      },
+      "widgets_values": [
+        "A.J.Casson"
+      ]
+    },
+    {
+      "id": 36,
+      "type": "PreviewImage",
+      "pos": [
+        1510.9326171875,
+        2627.9462890625
+      ],
+      "size": [
+        369.552734375,
+        401.5439147949219
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 61
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.45",
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 42,
+      "type": "easy showAnything",
+      "pos": [
+        1216.52294921875,
+        2642.767822265625
+      ],
+      "size": [
+        210,
+        88
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "anything",
+          "shape": 7,
+          "type": "*",
+          "link": 69
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "*",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-easy-use",
+        "ver": "1.3.1",
+        "Node name for S&R": "easy showAnything"
+      },
+      "widgets_values": [
+        "by A.J.Casson, cubism, expressionism"
+      ]
+    },
+    {
+      "id": 48,
+      "type": "easy showAnything",
+      "pos": [
+        1236.9918212890625,
+        2304.056640625
+      ],
+      "size": [
+        210,
+        88
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "anything",
+          "shape": 7,
+          "type": "*",
+          "link": 73
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "*",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-easy-use",
+        "ver": "1.3.1",
+        "Node name for S&R": "easy showAnything"
+      }
+    },
+    {
+      "id": 49,
+      "type": "easy showAnything",
+      "pos": [
+        1236.9920654296875,
+        2138.61572265625
+      ],
+      "size": [
+        210,
+        88
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "anything",
+          "shape": 7,
+          "type": "*",
+          "link": 72
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "*",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-easy-use",
+        "ver": "1.3.1",
+        "Node name for S&R": "easy showAnything"
+      }
+    },
+    {
+      "id": 32,
+      "type": "KVLoadFromRegistry",
+      "pos": [
+        228.56874084472656,
+        2678.065185546875
+      ],
+      "size": [
+        270,
+        78
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "store",
+          "type": "KV",
+          "links": [
+            68
+          ]
+        },
+        {
+          "name": "path",
+          "type": "STRING",
+          "links": [
+            60
+          ]
+        }
+      ],
+      "properties": {
+        "aux_id": "millerlight/ComfyUI-KVTools",
+        "ver": "7038425a29d0f90d96947102a9d6e75694b59f70",
+        "Node name for S&R": "KVLoadFromRegistry"
+      },
+      "widgets_values": [
+        "artists-and-styles.json"
+      ]
+    },
+    {
+      "id": 45,
+      "type": "KVGet",
+      "pos": [
+        576.7450561523438,
+        2085.4912109375
+      ],
+      "size": [
+        400,
+        430
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "store",
+          "type": "KV",
+          "link": 76
+        }
+      ],
+      "outputs": [
+        {
+          "name": "value",
+          "type": "STRING",
+          "links": [
+            72
+          ]
+        },
+        {
+          "name": "key",
+          "type": "STRING",
+          "links": [
+            73
+          ]
+        }
+      ],
+      "properties": {
+        "aux_id": "millerlight/ComfyUI-KVTools",
+        "ver": "7038425a29d0f90d96947102a9d6e75694b59f70",
+        "Node name for S&R": "KVGet"
+      },
+      "widgets_values": [
+        null,
+        "lang",
+        "A.J.Casson",
+        "string",
+        "string",
+        "(dropdown enabled)",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        false
+      ]
+    },
+    {
+      "id": 43,
+      "type": "KVGet",
+      "pos": [
+        599.6506958007812,
+        2633.492431640625
+      ],
+      "size": [
+        400,
+        430
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "store",
+          "type": "KV",
+          "link": 68
+        }
+      ],
+      "outputs": [
+        {
+          "name": "value",
+          "type": "STRING",
+          "links": [
+            69
+          ]
+        },
+        {
+          "name": "key",
+          "type": "STRING",
+          "links": [
+            70,
+            71
+          ]
+        }
+      ],
+      "properties": {
+        "aux_id": "millerlight/ComfyUI-KVTools",
+        "ver": "7038425a29d0f90d96947102a9d6e75694b59f70",
+        "Node name for S&R": "KVGet"
+      },
+      "widgets_values": [
+        null,
+        "A.J.Casson",
+        "",
+        "string",
+        "(dropdown enabled)",
+        "",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        false
+      ]
+    },
+    {
+      "id": 44,
+      "type": "KVLoadInline",
+      "pos": [
+        29.074668884277344,
+        2127.08251953125
+      ],
+      "size": [
+        400,
+        200
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "store",
+          "type": "KV",
+          "links": [
+            76
+          ]
+        }
+      ],
+      "properties": {
+        "aux_id": "millerlight/ComfyUI-KVTools",
+        "ver": "7038425a29d0f90d96947102a9d6e75694b59f70",
+        "Node name for S&R": "KVLoadInline"
+      },
+      "widgets_values": [
+        "{\n\"speaker\": \"tom\",\n\"lang\": \"de\"\n}"
+      ]
+    }
+  ],
+  "links": [
+    [
+      60,
+      32,
+      1,
+      39,
+      1,
+      "STRING"
+    ],
+    [
+      61,
+      39,
+      0,
+      36,
+      0,
+      "IMAGE"
+    ],
+    [
+      62,
+      39,
+      1,
+      38,
+      0,
+      "*"
+    ],
+    [
+      68,
+      32,
+      0,
+      43,
+      0,
+      "KV"
+    ],
+    [
+      69,
+      43,
+      0,
+      42,
+      0,
+      "*"
+    ],
+    [
+      70,
+      43,
+      1,
+      35,
+      0,
+      "*"
+    ],
+    [
+      71,
+      43,
+      1,
+      39,
+      0,
+      "STRING"
+    ],
+    [
+      72,
+      45,
+      0,
+      49,
+      0,
+      "*"
+    ],
+    [
+      73,
+      45,
+      1,
+      48,
+      0,
+      "*"
+    ],
+    [
+      76,
+      44,
+      0,
+      45,
+      0,
+      "KV"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.8769226950000015,
+      "offset": [
+        200.0292583727722,
+        -2246.631031719159
+      ]
+    },
+    "frontendVersion": "1.23.4",
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}

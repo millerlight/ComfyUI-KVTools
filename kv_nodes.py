@@ -1,10 +1,16 @@
-# ComfyUI-KVTools: Key/Value Utilities (stabil)
+# ComfyUI-KVTools: Key/Value Utilities + sicherer Image-Preview-Loader
+# Robuste Version: behandelt Keys mit eingebauter Endung (.png/.jpg/.jpeg/.webp)
+# UI/Dropdown/Defaults/Auto-Run ist in web/extension.js.
 
 import json
 import re
 import os
 
 print("[KVTools] loaded from", __file__)
+
+# ---------------------------------------------------------------------
+# Parsing/Dumping Helpers
+# ---------------------------------------------------------------------
 
 def _parse_data(data: str, fmt: str):
     data = (data or "").strip()
@@ -61,6 +67,10 @@ def _cast(value, as_type: str):
         return s in ("1", "true", "yes", "y", "on")
     return value
 
+# ---------------------------------------------------------------------
+# Nodes: KV
+# ---------------------------------------------------------------------
+
 class KVLoadInline:
     @classmethod
     def INPUT_TYPES(cls):
@@ -82,7 +92,6 @@ class KVLoadInline:
 
 class KVGet:
     """Read one value from a key/value store"""
-
     CATEGORY = "KVTools"
     FUNCTION = "kv_get"
 
@@ -100,24 +109,26 @@ class KVGet:
                     "default": "",
                     "multiline": True,
                 }),
-                # WICHTIG: '' als Option zulassen für alte Workflows
-                "as_type": (["string", "int", "float", "bool", ""], {
+                "as_type": (["string", "int", "float", "bool"], {
                     "default": "string",
                 }),
             },
             "optional": {
-                "default_key": ("STRING", { "default": "", "visible": False, "multiline": False }),
                 "keys_hint": ("STRING", {
                     "default": "(dropdown enabled)",
+                    "multiline": False,
+                    "visible": False,
+                }),
+                "default_key": ("STRING", {
+                    "default": "",
                     "multiline": False,
                     "visible": False,
                 }),
             }
         }
 
-    # value, key (bestehend) + json + kv (neu)
-    RETURN_TYPES = ("STRING", "STRING", "STRING", "STRING")
-    RETURN_NAMES  = ("value",  "key",   "json",   "kv")
+    RETURN_TYPES = ("STRING", "STRING")
+    RETURN_NAMES = ("value", "key")
     OUTPUT_NODE = True
 
     def __init__(self):
@@ -126,44 +137,27 @@ class KVGet:
     def kv_get(self, store, key, default, as_type, **kwargs):
         if default is None:
             default = ""
+        value = store.get(key, default)
 
-        # Fallback: leere/ungültige Auswahl wie 'string' behandeln
-        if as_type not in ("string", "int", "float", "bool"):
-            as_type = "string"
-
-        # 1) Wert holen
-        raw_value = store.get(key, default)
-
-        # 2) in gewählten Typ casten (für 'value')
         if as_type == "int":
             try:
-                value = str(int(raw_value))
+                value = str(int(value))
             except:
                 value = default
         elif as_type == "float":
             try:
-                value = str(float(raw_value))
+                value = str(float(value))
             except:
                 value = default
         elif as_type == "bool":
-            if str(raw_value).strip().lower() in ("1", "true", "yes"):
+            if str(value).strip().lower() in ("1", "true", "yes"):
                 value = "true"
             else:
                 value = "false"
         else:
-            value = "" if raw_value is None else str(raw_value)
+            value = str(value)
 
-        # 3) JSON-Snippet {"key":"value"}
-        json_snippet = json.dumps({str(key): ("" if raw_value is None else str(raw_value))}, ensure_ascii=False)
-
-        # 4) KV-Zeile key=value
-        if isinstance(raw_value, (dict, list)):
-            kv_value = json.dumps(raw_value, ensure_ascii=False)
-        else:
-            kv_value = "" if raw_value is None else str(raw_value)
-        kv_line = f"{key}={kv_value}"
-
-        return (value, key, json_snippet, kv_line)
+        return (value, key)
 
 class KVLoadFromRegistry:
     _BASE = os.path.join(os.getcwd(), "custom_kv_stores")
@@ -197,32 +191,111 @@ class KVLoadFromRegistry:
         store = _parse_data(text, "auto")
         return (store, path)
 
-NODE_CLASS_MAPPINGS = {
-    "KVLoadInline": KVLoadInline,
-    "KVLoadFromRegistry": KVLoadFromRegistry,
-    "KVGet": KVGet,
-}
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "KVLoadInline": "KV Load Inline",
-    "KVLoadFromRegistry": "KV Load from Registry",
-    "KVGet": "KV Get Value",
-}
+# ---------------------------------------------------------------------
+# Sicherer Image-Preview
+# Struktur: <ComfyUI>/custom_kv_stores/images/<json-basisname>/<key>[.ext]
+# Falls key bereits .png/.jpg/.jpeg/.webp enthält, wird diese Endung genutzt.
+# ---------------------------------------------------------------------
 
+def _images_root():
+    return os.path.join(os.getcwd(), "custom_kv_stores", "images")
 
-# --- KVTools: Build an image path from key + base_dir + extension ---
-import re, os
-from PIL import Image
-import numpy as np
-import torch
+def _sanitize_name(s: str) -> str:
+    s = os.path.basename(str(s or "").strip())
+    # Erlaubt: Buchstaben, Ziffern, Punkt, Unterstrich, Minus, Leerzeichen
+    return re.sub(r"[^A-Za-z0-9._ \-]+", "_", s)
 
-class KVBuildImagePath:
+def _split_key_and_ext(key: str):
+    m = re.match(r"^(.*)\.(png|jpg|jpeg|webp)$", str(key or "").strip(), re.IGNORECASE)
+    if m:
+        return m.group(1), m.group(2).lower()
+    return key, None
+
+# Platzhalter (1x1 schwarz), damit nie None ausgegeben wird
+try:
+    import torch as _torch
+    _KVTOOLS_PLACEHOLDER = _torch.zeros((1, 1, 1, 3), dtype=_torch.float32)
+except Exception:
+    _KVTOOLS_PLACEHOLDER = None
+
+def _placeholder_image():
+    global _KVTOOLS_PLACEHOLDER
+    if _KVTOOLS_PLACEHOLDER is None:
+        try:
+            import torch
+            _KVTOOLS_PLACEHOLDER = torch.zeros((1, 1, 1, 3), dtype=torch.float32)
+        except Exception:
+            _KVTOOLS_PLACEHOLDER = 0
+    return _KVTOOLS_PLACEHOLDER
+
+try:
+    os.makedirs(_images_root(), exist_ok=True)
+except Exception:
+    pass
+
+class KVPreviewImageFromRegistry:
+    """
+    Liefert IMMER den berechneten Pfad (zweiter Output).
+    Nutzt die Endung aus dem Key, wenn vorhanden.
+    """
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
                 "key": ("STRING", {"forceInput": True, "multiline": False}),
-                "base_dir": ("STRING", {"default": "", "multiline": False}),
-                "ext": (["png", "jpg", "jpeg", "webp"], {"default": "png"}),
+                "registry_path": ("STRING", {"forceInput": True, "multiline": False}),
+                "ext": (["png"], {"default": "png"}),  # Fallback-Endung
+            }
+        }
+
+    RETURN_TYPES = ("IMAGE", "STRING")
+    RETURN_NAMES = ("image", "path")
+    FUNCTION = "load"
+    CATEGORY = "Utils/KV"
+
+    def load(self, key, registry_path, ext):
+        img_out = _placeholder_image()
+
+        key = str(key or "").strip()
+        registry_path = str(registry_path or "").strip()
+        if not key or not registry_path:
+            return (img_out, "")
+
+        base = _images_root()
+        json_base = os.path.splitext(os.path.basename(registry_path))[0]
+
+        # Endung aus Key respektieren
+        key_name, key_ext = _split_key_and_ext(key)
+        used_ext = (key_ext or ext or "png").lower()
+
+        folder = _sanitize_name(json_base)
+        fname = f"{_sanitize_name(key_name)}.{used_ext}"
+        full_path = os.path.join(base, folder, fname)
+
+        # Pfad IMMER herausgeben
+        if not os.path.isfile(full_path):
+            return (img_out, full_path)
+
+        try:
+            from PIL import Image
+            import numpy as np
+            import torch
+            img = Image.open(full_path).convert("RGB")
+            arr = (np.asarray(img).astype("float32") / 255.0)  # H,W,3
+            t = torch.from_numpy(arr)[None, ...]               # 1,H,W,3
+            return (t, full_path)
+        except Exception:
+            return (img_out, full_path)
+
+class KVImagePathFromRegistry:
+    """Nur Pfad bauen – respektiert Endung im Key, wenn vorhanden."""
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "key": ("STRING", {"forceInput": True, "multiline": False}),
+                "registry_path": ("STRING", {"forceInput": True, "multiline": False}),
+                "ext": (["png"], {"default": "png"}),
             }
         }
 
@@ -231,49 +304,38 @@ class KVBuildImagePath:
     FUNCTION = "build"
     CATEGORY = "Utils/KV"
 
-    def build(self, key, base_dir, ext):
-        # Key in einen sicheren Dateinamen überführen (keine Pfad-Tricks)
-        name = os.path.basename(str(key).strip())
-        safe = re.sub(r"[^A-Za-z0-9._ -]+", "_", name)
-        filename = f"{safe}.{ext}"
-        path = os.path.join(str(base_dir).strip(), filename)
+    def build(self, key, registry_path, ext):
+        key = str(key or "").strip()
+        registry_path = str(registry_path or "").strip()
+        if not key or not registry_path:
+            return ("",)
+
+        key_name, key_ext = _split_key_and_ext(key)
+        used_ext = (key_ext or ext or "png").lower()
+
+        base = _images_root()
+        json_base = os.path.splitext(os.path.basename(registry_path))[0]
+        folder = _sanitize_name(json_base)
+        fname = f"{_sanitize_name(key_name)}.{used_ext}"
+        path = os.path.join(base, folder, fname)
         return (path,)
 
+# ---------------------------------------------------------------------
+# Node Mappings
+# ---------------------------------------------------------------------
 
-class KVLoadImageFromPath:
-    """
-    Minimaler Loader: lädt ein Bild von 'path' und gibt ein ComfyUI-IMAGE zurück.
-    Form: Tensor [1, H, W, 3], float32, 0..1
-    """
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "path": ("STRING", {"forceInput": True, "multiline": False}),
-            }
-        }
+NODE_CLASS_MAPPINGS = {
+    "KVLoadInline": KVLoadInline,
+    "KVLoadFromRegistry": KVLoadFromRegistry,
+    "KVGet": KVGet,
+    "KVPreviewImageFromRegistry": KVPreviewImageFromRegistry,
+    "KVImagePathFromRegistry": KVImagePathFromRegistry,
+}
 
-    RETURN_TYPES = ("IMAGE",)
-    RETURN_NAMES = ("image",)
-    FUNCTION = "load"
-    CATEGORY = "Utils/KV"
-
-    def load(self, path):
-        p = str(path or "").strip()
-        if not p or not os.path.isfile(p):
-            raise FileNotFoundError(f"KVLoadImageFromPath: file not found: {p}")
-        img = Image.open(p).convert("RGB")
-        arr = np.array(img).astype(np.float32) / 255.0  # H, W, 3
-        t = torch.from_numpy(arr)[None, ...]            # 1, H, W, 3
-        return (t,)
-
-
-# ---- Node-Mapping ergänzen (am bestehenden Mapping unten dranhängen) ----
-NODE_CLASS_MAPPINGS.update({
-    "KVBuildImagePath": KVBuildImagePath,
-    "KVLoadImageFromPath": KVLoadImageFromPath,
-})
-NODE_DISPLAY_NAME_MAPPINGS.update({
-    "KVBuildImagePath": "KV Build Image Path",
-    "KVLoadImageFromPath": "KV Load Image From Path",
-})
+NODE_DISPLAY_NAME_MAPPINGS = {
+    "KVLoadInline": "KV Load Inline",
+    "KVLoadFromRegistry": "KV Load from Registry",
+    "KVGet": "KV Get Value",
+    "KVPreviewImageFromRegistry": "KV Preview Image (Registry Key)",
+    "KVImagePathFromRegistry": "KV Image Path (Registry Key)",
+}
