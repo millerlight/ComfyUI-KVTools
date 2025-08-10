@@ -83,20 +83,37 @@ try:
 
     # POST /kvtools/peek  {file_name|path, key} -> {"ok":true,"value": "..."}
     # reads a value from a JSON in BASE_DIR, no paths outside allowed.
+    # POST /kvtools/peek  {file_name|path, key} -> {"ok":true,"value": "..."}
+    # Reads ONLY whitelisted (file,key) pairs that exist in the registry.
     @PromptServer.instance.routes.post("/kvtools/peek")
     async def kvtools_peek(request):
         try:
             data = await request.json()
-        except:
+        except Exception:
             data = {}
         file_name = data.get("file_name") or data.get("path") or ""
         key = data.get("key") or ""
         if not file_name or not key:
             return web.json_response({"ok": False, "error": "missing file_name or key"}, status=400)
 
+        # --- load registry (prefer on-disk JSON; fallback to fresh scan)
+        try:
+            with open(REG_PATH, "r", encoding="utf-8") as fh:
+                reg = json.load(fh)
+        except Exception:
+            reg = _scan()
+
+        files = (reg or {}).get("files", {})
+        # normalize to registry key (json basename with extension)
         json_name = os.path.basename(str(file_name).strip())
+        # require: listed in registry, key exists
+        entry = files.get(json_name)
+        if not entry or "keys" not in entry or str(key) not in entry["keys"]:
+            return web.json_response({"ok": False, "error": "not whitelisted (file/key)"}, status=403)
+
+        # path under BASE_DIR, file must exist
         json_path = os.path.join(BASE_DIR, json_name)
-        if not (json_path.startswith(BASE_DIR) and os.path.isfile(json_path)):
+        if not (os.path.isfile(json_path) and os.path.abspath(json_path).startswith(os.path.abspath(BASE_DIR))):
             return web.json_response({"ok": False, "error": "invalid file"}, status=400)
 
         try:
@@ -108,6 +125,7 @@ try:
             return web.json_response({"ok": True, "value": str(val)})
         except Exception as e:
             return web.json_response({"ok": False, "error": str(e)}, status=500)
+
 
     # GET /kvtools/image?file=<jsonNameOrPath>&key=<key>&ext=png
     # Serves ONLY images from <ComfyUI>/custom_kv_stores/images/<json-base>/<key>.<ext>
