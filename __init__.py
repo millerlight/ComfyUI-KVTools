@@ -1,4 +1,4 @@
-# Version: x-0
+# Version: 1.0.0
 # __init__.py in custom_nodes/ComfyUI-KVTools
 # - Registry scan for the frontend dropdown
 # - Safe web endpoints:

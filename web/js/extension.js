@@ -1,3 +1,4 @@
+// Version: 1.0.0
 // ComfyUI-KVTools — Frontend UI
 // - No auto-run on UI changes
 // - Real multi-line preview with scrollbar (custom widget "preview_value")

@@ -1,4 +1,4 @@
-# Version: x-0
+# Version: 1.0.0
 # ComfyUI-KVTools: Key/Value utilities + safe image preview loader
 # Random logic (KVGet):
 #   - If 'random' is True, pick randomly ONLY when
