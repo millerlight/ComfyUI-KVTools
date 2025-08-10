@@ -33,9 +33,10 @@ Utility nodes for key/value (KV) workflows in ComfyUI — with live previews, au
   ```
 - Place optional images here:
   ```
-  <ComfyUI>/custom-kv-stores/images/<filename>/
+  <ComfyUI>/custom-kv-stores/images/<filename>/<key>.png
   ```
   Give your images the same name as the corresponding key in the JSON file.
+  Key and filename may contain numbers, letters, dots and underlines.
 
   Each must be **simple key-value JSON**:
   ```json
